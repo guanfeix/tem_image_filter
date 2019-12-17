@@ -1,0 +1,16 @@
+PyWavelets==0.5.2
+opencv_python==3.4.0.12
+Flask==0.12.2
+requests==2.18.4
+six==1.11.0
+Keras==2.1.4
+numpy==1.14.2
+tensorflow==1.4.0
+scipy==1.0.0
+Pillow==5.1.0
+scikit_learn==0.19.1
+h5py==2.7.1
+psutil==5.6.7
+redis
+dynaconf==2.2.0
+# 线上需要gpu板的tensorflow
