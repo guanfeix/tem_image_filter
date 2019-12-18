@@ -11,7 +11,7 @@ from urllib import parse
 
 port = 0
 password = None
-if socket.gethostbyname(socket.gethostname()) not in ['127.0.0.1', '192.168.1.51']:
+if socket.gethostbyname(socket.gethostname())  in ['127.0.0.1', '192.168.1.51']:
     REDIS_URL = 'redis://127.0.0.1:6379'
 else:
     REDIS_URL = 'redis://gpu003:6379'
