@@ -1,10 +1,13 @@
-import os
+from src.detect_all_lib.model import yolo_body, yolo_test
 import numpy as np
+import os
 from keras import backend as K
+from keras.models import load_model
 from keras.layers import Input
 import cv2
 from PIL import Image
-from src.detect_all_lib.model import yolo_body, yolo_test
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
 
 
 def resize_iamge(image, size):
@@ -166,6 +169,7 @@ class YOLO(object):
 					continue
 
 				labelList.append({"xmin": str(xmin), "ymin": str(ymin), "xmax": str(xmax), "ymax": str(ymax),"label": str(predicted_class), "score": str(score)})
+# 		print("laeblList : {}".format(labelList))
 		return labelList
 
 	def close_session(self):

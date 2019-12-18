@@ -62,10 +62,10 @@ class QualityDetect(DetectBase):
     def get_image_faceinfo(self):
         # num, positions, landmarks = self.filter.get_img_face_info(self.image_cv)
         num, face_normal_positions, landmarks = self.filter.get_face_positions(self.image_cv)
-        logger.info('face number: {}, positions: {}, landmarks: {}'.format(num, face_normal_positions, landmarks))
+        positions = []
         if face_normal_positions:
             positions = [list(i.values()) for i in face_normal_positions]
-        logger.info('face number: {}, positions: {}'.format(num, positions))
+        logger.info('face number: {}, face_normal_positions: {}, positions: %s'.format(num, face_normal_positions, positions))
         return num, positions, landmarks, face_normal_positions
 
     def prepare_faceinfos(self):
@@ -109,10 +109,6 @@ class QualityDetect(DetectBase):
 
         base_tags = []
 
-        # is_gray = self.is_gray_image()
-        # if is_gray:
-        #     base_tags.append('filter-gray')
-
         normal = self.judge_image_shape()
         if not normal:
             base_tags.append('shape_unfit')
@@ -127,27 +123,6 @@ class QualityDetect(DetectBase):
 
         return base_tags, {'image-blur': blur, 'image-resolution': resolution, 'image-shape': self.image_cv.shape}
 
-    # def old_tag_faces_info(self, max_face_num=2):
-    #
-    #     self.prepare_faceinfos()
-    #     face_num = self.face_infos['face_num']
-    #     if face_num == 0 or face_num > max_face_num:
-    #         return False, ['filter-face-num-manyornone'], None
-    #
-    #     faceinfo_tags = []
-    #     face_positions = self.face_infos['face_positions']
-    #     face_normal_positions = self.face_infos['face_normal_positions']
-    #     face_landmarks = self.face_infos['face_landmarks']
-    #     for index, position in enumerate(face_positions):
-    #         status, tag = self.tag_face_info(
-    #             index, position, face_normal_positions[index], face_landmarks[:, index])
-    #         if status:
-    #             faceinfo_tags.append(tag)
-    #         else:
-    #             return False, [tag], None
-    #
-    #     return True, None, faceinfo_tags
-
     def tag_faces_info(self, max_face_num=3):
         """
         逻辑先跑通后面在慢慢调整
@@ -160,13 +135,9 @@ class QualityDetect(DetectBase):
         if face_num == 0 or face_num > max_face_num:
             return True, ['no-face'], None, 0
 
-
         face_positions: List[List] = self.face_infos['face_positions']
         face_normal_positions = self.face_infos['face_normal_positions']
-        # face_landmarks = self.face_infos['face_landmarks']
         face_filter_fail = True
-        img_h, img_w, img_c = self.image_cv.shape
-        faceinfo_tags = face_normal_positions
         new_face_positions = []
         # img_w_f, img_h_f = float(img_w), float(img_h)
         # face_positions = [list(map(lambda x: round(x / img_h, 3), i)) for i in face_positions]
@@ -177,24 +148,27 @@ class QualityDetect(DetectBase):
             face_w, face_h = xmax - xmin, ymax - ymin
 
             # if 0.4*img_h_f > face_h > 0.05*img_h_f:
-            if 0.4 > face_h > 0.05:
-                face_filter_fail = False
-                logger.info('face_filter_fail: %s, pos: %s', face_filter_fail, pos)
-            elif face_h < 0.05:
+            if face_h > 0.05:
                 new_face_positions.append(pos)
+                if 0.4 > face_h:
+                    face_filter_fail = False
+                    logger.info('face_filter_fail: %s, pos: %s', face_filter_fail, pos)
+
+            # elif face_h > 0.05:
+            #     new_face_positions.append(pos)
 
         new_face_num = len(new_face_positions)
         if face_filter_fail:
             msg = '人脸高度全部大于0.4或者人脸高度全部小于0.05'
-            return False, msg, faceinfo_tags, face_num
+            return False, msg, face_normal_positions, face_num
         if new_face_num > 3:
             face_filter_fail = True
             msg = 'face_num>3'
-            return False, 'face_num>3', faceinfo_tags, new_face_num
+            return False, 'face_num>3', face_normal_positions, new_face_num
         elif new_face_num == 0:
             face_filter_fail = False
             msg = 'after filter no-face'
-            return True, ['after filter no-face'], faceinfo_tags, 0
+            return True, ['after filter no-face'], face_normal_positions, 0
         else:
             for index, pos in enumerate(new_face_positions):
                 # 去除人脸高度小于0.05) 再次过滤face_num_1 大于3,face_h_1大于0.4
@@ -205,18 +179,18 @@ class QualityDetect(DetectBase):
                     msg = 'after filter face_h_1大于0.4 '
                     return False, [msg], None, 0
 
-        return True, None, faceinfo_tags, new_face_num
+        return True, None, face_normal_positions, new_face_num
 
     def tag_text_info(self):
         return self.filter.get_img_text(self.image_cv) != 'norm'
 
     def get_face_complexion(self):
-        face_complexion_labels = self.filter.get_face_attributes(self.image_cv, 'complexion')
-
+        face_positions, face_complexion_labels = self.filter.get_face_attributes(self.image_cv, 'complexion')
+        print(face_complexion_labels)
         if face_complexion_labels is None or 'black' in face_complexion_labels:  # 人脸肤色识别结果为空或者图像内有黑人
-            return False, face_complexion_labels
+            return True, face_complexion_labels
         logger.info('face_complexion_labels: %s', face_complexion_labels)
-        return True, ''
+        return False, ''
 
     def test_img_clothes(self):
         """

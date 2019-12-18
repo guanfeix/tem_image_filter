@@ -33,18 +33,16 @@ class textRecognition():
     """
     文本识别模型
     """
-
     def get_session(self):
         tf_config = tf.ConfigProto()
         tf_config.gpu_options.allow_growth = True
         return tf.Session(config=tf_config)
 
-    def __init__(self, modelPath='', IMAGE_SIZE = 299):
+    def __init__(self, modelPath=''):
         self.modelPath = modelPath
-        self.IMAGE_SIZE = IMAGE_SIZE
-        self.label_dict = {'0': 'text', '1': 'norm'}
+        label_dict = {'0': 'text', '1': 'norm'}
         with tf.variable_scope('text'):
-            self.input_tensor = Input(shape=(self.IMAGE_SIZE, self.IMAGE_SIZE, 3))
+            self.input_tensor = Input(shape=(299, 299, 3))
             self.base_model = Xception(input_tensor=self.input_tensor,
                                   weights=None, include_top=False, pooling='avg')
             self.x = self.base_model.output
@@ -53,27 +51,18 @@ class textRecognition():
                              use_bias=False, name='text')(self.feature)
             self.model = Model(self.input_tensor, self.classify)
             self.model.load_weights(self.modelPath)
-            self.model.predict(np.zeros((1, self.IMAGE_SIZE,self.IMAGE_SIZE,3)))
+            self.model.predict(np.zeros((1, 299,299,3)))
 
     def read_img(self, img):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = cv2.resize(img, (self.IMAGE_SIZE, self.IMAGE_SIZE))
+        img = cv2.resize(img, (299, 299))
         img = (np.array(img) - 127.5) / 127.5
         return img
 
-    def recognition_batch(self, imgList):
-        imgList = [self.read_img(img) for img in imgList]
-        contents = np.reshape(imgList, (-1, self.IMAGE_SIZE, self.IMAGE_SIZE, 3))
-        predicts = self.model.predict(contents)
-        results = []
-        for index in range(len(imgList)):
-            predict_label = self.label_dict[str(np.argmax(predicts[index], axis=-1))]
-            results.append(predict_label)
-        return results
-        
     def recognition(self, img):
         img = self.read_img(img)
-        img = np.reshape(img, (-1, self.IMAGE_SIZE, self.IMAGE_SIZE, 3))
-        predict = self.model.predict(img)
-        predict_label = self.label_dict[str(np.argmax(predict, axis=-1)[0])]
-        return predict_label
+        imgs = np.reshape(img, (-1, 299, 299, 3))
+        predict = self.model.predict(imgs)
+        predict_result = np.max(predict, axis=-1)[0]
+        predict_index = str(np.argmax(predict, axis=-1)[0])
+        return predict_index

@@ -241,6 +241,7 @@ class ImageFilter(object):
             faceNum, face_positions, landmarks = self.get_face_positions(img)
             if face_arributes_name == self.face_attributes_list[0]:
                 # 改动
+                # return self.get_face_complexion(img, faceNum, landmarks)
                 return face_positions, self.get_face_complexion(img, faceNum, landmarks)
 
 
@@ -265,9 +266,8 @@ class ImageFilter(object):
         text_label_dict = {"0": "text", "1": "norm"}
         if img is not None:
             if len(img.shape) == 2:
-                return 'is_grey'
+                return
             else:
-                # result_label = self.text_model.recognition(img)
-                # print(result_label)
-                # result_index = text_label_dict[result_label]
-                return self.text_model.recognition(img)
+                result_label = self.text_model.recognition(img)
+                result_index = text_label_dict[result_label]
+                return result_index

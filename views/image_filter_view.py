@@ -23,7 +23,7 @@ hostname = socket.gethostname()
 class ImageFilterView(DetectView):
 
     methods = ['POST']
-    decorators = [statistics_recognize('ImageFilter')]
+    decorators = [statistics_recognize('TemImageFilter')]
     # @statistics_recognize('ImageFilter')
 
     def dispatch_request(self):
@@ -60,17 +60,17 @@ class ImageFilterView(DetectView):
 
             logger.info('face info is_ok: {}, fail_tags: {}, face_normal_positions: {}'.
                         format(is_ok, fail_tag, face_normal_positions))
+            # 记录面部信息
+            face_info_list = []
+            filter_tag_list['face_infos'] = face_info_list
+            for index, pos in enumerate(face_normal_positions):
+                face_info_list.append({"face_index": index,  "postion": pos})
 
             if not is_ok:
                 base_tag_list.append(fail_tag)
                 logger.info('result: {}'.format(result))
                 return make_response(jsonify(result), 200)
 
-            # 记录面部信息
-            face_info_list = []
-            filter_tag_list['face_infos'] = face_info_list
-            for index, pos in enumerate(face_normal_positions):
-                face_info_list.append({"face_index": index,  "postion":pos})
 
             # 黑人图片去除
             if face_num > 0:

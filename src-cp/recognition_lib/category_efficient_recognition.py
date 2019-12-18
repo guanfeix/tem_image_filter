@@ -24,6 +24,7 @@ def softmax(x):
                          'Received input: %s' % x)
 get_custom_objects().update({'mySoftmax': Activation(softmax)})
 
+
 class Efficient_Recognition():
     
     def get_session(self):

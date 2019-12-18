@@ -15,15 +15,19 @@
         8. 图像中是否存在大量文本
 '''
 
+import os
 import cv2
 import numpy as np
-from ..recognition_lib.complexion import complexionRecognition
-from ..detect_all_lib.face_detection import faceDetect, alignment
-from ..detect_all_lib.yolo_detection import YOLO
-from ..recognition_lib.text_recognition import textRecognition
+import sys
+from sklearn.externals import joblib
+sys.path.append("..")
+from recognition_lib.complexion import complexionRecognition
+from detect_all_lib.face_detection import faceDetect, alignment
+from detect_all_lib.yolo_detection import YOLO
+from recognition_lib.text_recognition import textRecognition
 
 
-class ImageFilter(object):
+class imageFilter():
     """
     服装图像过滤器,用于获取图像的各项信息
     """
@@ -31,11 +35,11 @@ class ImageFilter(object):
     def __init__(self, face_detect_model_path='',
                  clothes_detect_model_path='',
                  complexion_model_path='',
-                 text_model_path='',
+                 text_model_path = '',
                  resolution_threshold=260,
-                 brightness_threshold=78,
-                 min_side_threshold=720,
-                 max_side_threshold=10000,
+                 brightness_threshold = 78,
+                 min_side_threshold = 720, 
+                 max_side_threshold = 10000, 
                  face_attributes_list=['complexion']):
 
         # 获取检测模型路径并加载人脸特征,服装检测模型
@@ -142,9 +146,9 @@ class ImageFilter(object):
         """
         if not img is None:
             img_resolution = cv2.Laplacian(img, cv2.CV_64F).var()
-            return img_resolution > self.resolution_threshold, img_resolution
+            return img_resolution > self.resolution_threshold
         else:
-            return None, None
+            return None
         
     def cal_img_brightness(self, img):
         """
@@ -152,24 +156,20 @@ class ImageFilter(object):
         输入参数:
             img : cv2读取到的图像
         返回结果:
-           dark:暗系图像
-           norm:正常图像
+           False:暗系图像
+           True:正常图像
         """
         if not img is None:
             if len(img.shape) == 2:
-                return None, 'is_gray'
+                return None
             else:
                 hls_img = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
                 lightness_result_ = hls_img[:, :, 1]
                 lightness_result_ = lightness_result_[np.where((lightness_result_!=0)& (lightness_result_!=255))] # 删除极值
                 lightness_result = np.sum(lightness_result_)/(hls_img.shape[0]*hls_img.shape[1])
-                if lightness_result < self.brightness_threshold:
-                    result = ('dark', 'filter-brightness-dark')
-                else:
-                    result = ('norm', '')
-                return result
+                return lightness_result >= self.brightness_threshold
         else:
-            return None, 'no image'
+            return None
 
    
 
@@ -240,7 +240,6 @@ class ImageFilter(object):
         else:
             faceNum, face_positions, landmarks = self.get_face_positions(img)
             if face_arributes_name == self.face_attributes_list[0]:
-                # 改动
                 return face_positions, self.get_face_complexion(img, faceNum, landmarks)
 
 
@@ -263,11 +262,12 @@ class ImageFilter(object):
             'norm': 图像为正常图像
         """
         text_label_dict = {"0": "text", "1": "norm"}
-        if img is not None:
+        if not img is None:
             if len(img.shape) == 2:
-                return 'is_grey'
+                return None
             else:
-                # result_label = self.text_model.recognition(img)
-                # print(result_label)
-                # result_index = text_label_dict[result_label]
-                return self.text_model.recognition(img)
+                result_label = self.text_model.recognition(img)
+                result_index = text_label_dict[result_label]
+                return result_index
+        else:
+            return None

@@ -44,19 +44,6 @@ class complexionRecognition():
             result.append(predict_index)
         return result
 
-    def recognition_batch(self,imgsList):
-        results = []
-        for imgs in imgsList:
-            imgs = np.reshape(np.array(imgs)/255,(-1,112,96,3))
-            predicts = self.model.predict(imgs)
-            result = [] 
-            for i in range(imgs.shape[0]):
-                predict_result = predicts[i]
-                predict_index = str(np.argmax(predict_result, axis=-1))
-                result.append(predict_index)
-            results.append(result)
-        return results
-
 
      
 

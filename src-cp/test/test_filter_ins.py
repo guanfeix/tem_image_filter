@@ -36,8 +36,9 @@
 5. 以上条件都不满足，则为正常图像  
 '''
 import sys
-sys.path.append("..")
+sys.path.append("/Users/zy/Desktop/tem_image_filter/src")
 from filter_lib.image_filter_lib import imageFilter
+# from ..filter_lib.image_filter_lib import ImageFilter
 import argparse
 import cv2
 import time
@@ -68,39 +69,38 @@ def test_img_face(img, imagefilter):
     """
     人脸规则过滤
     """
-    face_positions, face_complexion_labels = imagefilter.get_face_attributes(img, 'complexion')  # 人脸信息(人脸位置, 人脸肤色)
-    face_num = len(face_positions)
+    face_num, face_positions, _ = imagefilter.get_face_positions(
+        img)  # 人脸信息(人脸个数，人脸位置)
     # 不计算过小人脸在内
-    if face_num > 1: 
-        sum_illegal_face = 0
+    if face_num == 1:  # 人脸个数等于1，过滤过大和过小人脸
         for face_position_dict in face_positions:
             xmin, ymin, xmax, ymax = max(0, float(face_position_dict['xmin'])), max(0, float(
                 face_position_dict['ymin'])), min(1, float(face_position_dict['xmax'])), min(1, float(face_position_dict['ymax']))
             face_h = ymax - ymin
             if face_h < 0.05 or face_h > 0.4:  # 人脸太小或者太大
-                sum_illegal_face += 1
-        if sum_illegal_face == face_num:
-            return False
-        else:
-            face_num_1, face_positions_1 = 0, []
-            for face_position_dict in face_positions:
-                xmin, ymin, xmax, ymax = max(0, float(face_position_dict['xmin'])), max(0, float(
-                    face_position_dict['ymin'])), min(1, float(face_position_dict['xmax'])), min(1, float(face_position_dict['ymax']))
-                face_positions_1.append([xmin, ymin, xmax, ymax])
-                face_num_1 += 1
-            # 重新计算人脸信息后，进行人脸过滤规则
-            if face_num_1 > 0:  # 人脸数量大于0，进行过滤
-                if face_num_1 <= 3:  # 人脸数小于等于3且大于0
-                    for face_position_ in face_positions_1:
-                        xmin, ymin, xmax, ymax = face_position_
-                        face_h_1 = ymax - ymin
-                        if face_h_1 > 0.4:  # 人脸太大
-                            return False
-                else:  # 人脸数大于3
-                    return False
+                return False
+    elif face_num > 1:  # 人脸个数大于1， 过小人脸不计算在内
+        face_num_1, face_positions_1 = 0, []
+        for face_position_dict in face_positions:
+            xmin, ymin, xmax, ymax = max(0, float(face_position_dict['xmin'])), max(0, float(
+                face_position_dict['ymin'])), min(1, float(face_position_dict['xmax'])), min(1, float(face_position_dict['ymax']))
+            face_positions_1.append([xmin, ymin, xmax, ymax])
+            face_num_1 += 1
+        # 重新计算人脸信息后，进行人脸过滤规则
+        if face_num_1 != 0:  # 人脸数量大于0，进行过滤
+            if face_num_1 <= 3:  # 人脸数小于等于3且大于0
+                for face_position_ in face_positions_1:
+                    xmin, ymin, xmax, ymax = face_position_
+                    face_h_1 = ymax - ymin
+                    if face_h_1 > 0.4:  # 人脸太大
+                        return False
+            else:  # 人脸数大于3
+                return False
 
     # 人脸面积过滤完毕，进行人脸是否为黑人过滤
     if face_num > 0:
+        face_complexion_labels = imagefilter.get_face_attributes(
+            img, 'complexion')
         if face_complexion_labels == None or 'black' in face_complexion_labels:  # 人脸肤色识别结果为空或者图像内有黑人
             return False
     return True
@@ -194,7 +194,7 @@ if __name__ == "__main__":
     uselessRecognitionClothesLabels = [
         '泳装-内衣', '内裤-泳裤', '礼服']  # 服装品类识别模型中要过滤的标签
     args = parser.parse_args()
-    imagefilter = imageFilter(face_detect_model_path=args.face_detect_model_path, clothes_detect_model_path=args.clothes_detect_model_path,
+    imagefilter = ImageFilter(face_detect_model_path=args.face_detect_model_path, clothes_detect_model_path=args.clothes_detect_model_path,
                               complexion_model_path=args.complexion_model_path, text_model_path=args.text_model_path,  resolution_threshold=args.resolution_threshold, brightness_threshold=args.brightness_threshold, min_side_threshold=args.min_side_threshold)
     img = cv2.imread(args.test_img_path)
     # 过滤标准V1

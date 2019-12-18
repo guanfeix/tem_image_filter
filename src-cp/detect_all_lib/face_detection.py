@@ -584,12 +584,3 @@ class faceDetect():
 		image = self.checkImg(image)
 		bounding_boxes, points = self.mtcnn_net.detect_face(image, self.minsize, self.pnet, self.rnet, self.onet,self.threshold, self.factor)
 		return bounding_boxes, points
-	
-	def detect_batch(self, imageList):
-		bounding_boxes_batch, points_batch = [], []
-		imageList = [self.checkImg(image) for image in imageList]
-		for image in imageList:
-			bounding_boxes, points = self.mtcnn_net.detect_face(image, self.minsize, self.pnet, self.rnet, self.onet,self.threshold, self.factor)
-			bounding_boxes_batch.append(bounding_boxes)
-			points_batch.append(points)
-		return bounding_boxes_batch, points_batch
