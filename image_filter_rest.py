@@ -36,7 +36,7 @@ ImageFilterView.init_version()
 ImageFilterView.init_filter(image_filter)
 # ImageFilterView.init_color_detect(color_detect)
 
-app.add_url_rule('/image/filter', view_func = ImageFilterView.as_view('image_filter'))
+app.add_url_rule('/image/filter', view_func=ImageFilterView.as_view('image_filter'))
 # app.add_url_rule('/image/detect/gray', view_func = DetectGrayView.as_view('detect_gray'))
 # app.add_url_rule('/image/detect/brightness', view_func = DetectBrightnessView.as_view('detect_brightness'))
 # app.add_url_rule('/image/detect/resolution', view_func = DetectResolutionView.as_view('detect_resolution'))

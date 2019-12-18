@@ -31,11 +31,11 @@ class ImageFilter(object):
     def __init__(self, face_detect_model_path='',
                  clothes_detect_model_path='',
                  complexion_model_path='',
-                 text_model_path = '',
+                 text_model_path='',
                  resolution_threshold=260,
-                 brightness_threshold = 78,
-                 min_side_threshold = 720, 
-                 max_side_threshold = 10000, 
+                 brightness_threshold=78,
+                 min_side_threshold=720,
+                 max_side_threshold=10000,
                  face_attributes_list=['complexion']):
 
         # 获取检测模型路径并加载人脸特征,服装检测模型
