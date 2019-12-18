@@ -46,36 +46,50 @@ class ImageFilterView(DetectView):
             image_url = json_data['imageUrl']
             image_source = json_data['image_source']
             result['url'] = image_url
-
+            # 图片载入
             detect = QualityDetect(self.image_filter, image_url, image_source)
             detect.load_image_cv()
 
             base_tags, resolution_tag = detect.tag_base_info()
+
             logger.info('base info tags:{}, resolution: {}'.format(base_tags, resolution_tag))
             [base_tag_list.append(tag) for tag in base_tags]
             filter_tag_list['blur-resolution'] = resolution_tag
 
-            is_ok, fail_tags, face_tags = detect.tag_faces_info()
-            logger.info('face info is_ok: {}, fail_tags: {}, face_tags: {}'.format(is_ok, fail_tags, face_tags))
-            if not is_ok:
-                [base_tag_list.append(tag) for tag in fail_tags]
+            is_ok, fail_tag, face_normal_positions, face_num = detect.tag_faces_info()
 
+            logger.info('face info is_ok: {}, fail_tags: {}, face_normal_positions: {}'.
+                        format(is_ok, fail_tag, face_normal_positions))
+
+            if not is_ok:
+                base_tag_list.append(fail_tag)
                 logger.info('result: {}'.format(result))
                 return make_response(jsonify(result), 200)
 
+            # 记录面部信息
             face_info_list = []
             filter_tag_list['face_infos'] = face_info_list
-            for tags in face_tags:
-                face_info_list.append(tags)
-            
-            black_face, faceattr_tags = detect.tag_face_attributes()
-            for i, tags in enumerate(faceattr_tags):
-                face_tags[i]['tags'] = tags['tags']
-            
-            if black_face:
-                base_tag_list.append('filter-face-black')
+            for index, pos in enumerate(face_normal_positions):
+                face_info_list.append({"face_index": index,  "postion":pos})
 
-            quality_ok = len(base_tag_list) == 0 and not black_face
+            # 黑人图片去除
+            if face_num > 0:
+                black_face, msg = detect.get_face_complexion()
+
+                if black_face:
+                    base_tag_list.append('filter-face-black')
+
+            is_ok, msg = detect.test_img_clothes()
+
+            text_exist = detect.tag_text_info()
+
+            if not is_ok:
+                base_tag_list.append(msg)
+            if text_exist:
+                base_tag_list.append('text_exist')
+
+            quality_ok = len(base_tag_list) == 0
+
             if quality_ok:
                 base_tag_list.append('filter-quality-ok')
                 result['filter_result'] = True 

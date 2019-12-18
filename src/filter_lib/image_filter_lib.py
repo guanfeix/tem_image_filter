@@ -75,10 +75,7 @@ class ImageFilter(object):
         """
         if not img is None:
             img_h, img_w, _ = img.shape
-            if min(img_h, img_w) < self.min_side_threshold:
-                return False
-            else:
-                return True
+            return  min(img_h, img_w) >= self.min_side_threshold
         else:
             return None
         
@@ -93,10 +90,7 @@ class ImageFilter(object):
         """
         if not img is None:
             img_h, img_w, _ = img.shape
-            if max(img_h, img_w) > self.max_side_threshold:
-                return False
-            else:
-                return True
+            return  max(img_h, img_w) <= self.max_side_threshold
         else:
             return None
 
@@ -113,10 +107,7 @@ class ImageFilter(object):
             img_channel = img.shape
             if len(img_channel) == 2:
                 return True
-            if np.mean(img[:, :, 0]) == np.mean(img[:, :, 1]):
-                return True
-            else:
-                return False
+            return  np.mean(img[:, :, 0]) == np.mean(img[:, :, 1])
         else:
             return None
 
@@ -135,10 +126,7 @@ class ImageFilter(object):
             img_bw = np.reshape(img, (-1, 3))
             black_num = len(np.where(np.sum(img_bw, axis=1) == 255*3)[0])
             white_num = len(np.where(np.sum(img_bw, axis=1) == 0)[0])
-            if black_num+white_num == img_h*img_w:
-                return True
-            else:
-                return False
+            return black_num+white_num == img_h*img_w
         else:
             return None
 
@@ -154,10 +142,7 @@ class ImageFilter(object):
         """
         if not img is None:
             img_resolution = cv2.Laplacian(img, cv2.CV_64F).var()
-            if img_resolution > self.resolution_threshold:
-                return True, img_resolution
-            else:
-                return False, img_resolution
+            return img_resolution > self.resolution_threshold, img_resolution
         else:
             return None, None
         
@@ -172,19 +157,19 @@ class ImageFilter(object):
         """
         if not img is None:
             if len(img.shape) == 2:
-                return None
+                return None, 'is_gray'
             else:
                 hls_img = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
                 lightness_result_ = hls_img[:, :, 1]
                 lightness_result_ = lightness_result_[np.where((lightness_result_!=0)& (lightness_result_!=255))] # 删除极值
                 lightness_result = np.sum(lightness_result_)/(hls_img.shape[0]*hls_img.shape[1])
                 if lightness_result < self.brightness_threshold:
-                    result = 'dark'
+                    result = ('dark', 'filter-brightness-dark')
                 else:
-                    result = 'norm'
+                    result = ('norm', '')
                 return result
         else:
-            return None
+            return None, 'no image'
 
    
 
@@ -255,7 +240,9 @@ class ImageFilter(object):
         else:
             faceNum, face_positions, landmarks = self.get_face_positions(img)
             if face_arributes_name == self.face_attributes_list[0]:
-                return self.get_face_complexion(img, faceNum, landmarks)
+                # 改动
+                return face_positions, self.get_face_complexion(img, faceNum, landmarks)
+
 
     def get_clothes_category_positions(self, img):
         """
@@ -276,12 +263,10 @@ class ImageFilter(object):
             'norm': 图像为正常图像
         """
         text_label_dict = {"0": "text", "1": "norm"}
-        if not img is None:
+        if img is not None:
             if len(img.shape) == 2:
-                return None
+                return
             else:
                 result_label = self.text_model.recognition(img)
                 result_index = text_label_dict[result_label]
                 return result_index
-        else:
-            return None

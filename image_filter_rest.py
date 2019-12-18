@@ -5,7 +5,7 @@ from flask import Flask
 
 import logging
 
-from src.filter_lib.image_filter_lib import ImageFilter
+from src.filter_lib.image_filter import ImageFilterConstructor
 # from color_lib.imgColor import genImgColor
 
 from views.image_filter_view import ImageFilterView
@@ -29,7 +29,7 @@ app = Flask(__name__)
 # 支持返回结果显示中文
 app.config['JSON_AS_ASCII'] = False
 
-image_filter = ImageFilter.instance()
+image_filter = ImageFilterConstructor.instance()
 # color_detect = genImgColor()
 
 ImageFilterView.init_version()
@@ -54,4 +54,4 @@ if __name__ == "__main__":
     logger.info('image filter detect service start ...')
 
     # start_daemon_thread()
-    app.run(host="0.0.0.0", port=9002, threaded=True)
+    app.run(host="0.0.0.0", port=9003, threaded=True)

@@ -1,4 +1,4 @@
-from detect_all_lib.model import yolo_body, yolo_test
+from src.detect_all_lib.model import yolo_body, yolo_test
 import numpy as np
 import os
 from keras import backend as K

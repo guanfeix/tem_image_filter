@@ -34,6 +34,7 @@ bstype_dict = {
 
 bstype_list = ['ins', 'show', 'market', 'diotion', 'pop']
 
+
 class DetectBase(object):
     def __init__(self, image_url, image_cv=None, image_pil=None):
 

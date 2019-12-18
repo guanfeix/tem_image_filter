@@ -36,8 +36,9 @@
 5. 以上条件都不满足，则为正常图像  
 '''
 import sys
-sys.path.append("..")
+sys.path.append("/Users/zy/Desktop/tem_image_filter/src")
 from filter_lib.image_filter_lib import imageFilter
+# from ..filter_lib.image_filter_lib import ImageFilter
 import argparse
 import cv2
 import time
@@ -193,7 +194,7 @@ if __name__ == "__main__":
     uselessRecognitionClothesLabels = [
         '泳装-内衣', '内裤-泳裤', '礼服']  # 服装品类识别模型中要过滤的标签
     args = parser.parse_args()
-    imagefilter = imageFilter(face_detect_model_path=args.face_detect_model_path, clothes_detect_model_path=args.clothes_detect_model_path,
+    imagefilter = ImageFilter(face_detect_model_path=args.face_detect_model_path, clothes_detect_model_path=args.clothes_detect_model_path,
                               complexion_model_path=args.complexion_model_path, text_model_path=args.text_model_path,  resolution_threshold=args.resolution_threshold, brightness_threshold=args.brightness_threshold, min_side_threshold=args.min_side_threshold)
     img = cv2.imread(args.test_img_path)
     # 过滤标准V1

@@ -1,10 +1,8 @@
-import numpy as np
-import cv2
-from urllib.request import urlopen
-
 import sys
 import traceback
 import logging
+
+from typing import List
 
 from .detect_base import DetectBase
 
@@ -19,34 +17,15 @@ class QualityDetect(DetectBase):
         self.filter = filter
         self.face_infos = None
         self.image_source = image_source
-
-    def get_image_shape(self):
-        if self.image_cv:
-            return self.image_cv.shape
-        
-        return None, None, None
-
-    def is_gray_image(self):
-        gray = self.filter.is_img_gray(self.image_cv)
-        return gray
+        self.uselessDetectClothesLabels = ['帽子', '鞋靴', '包']
 
     def get_image_resolution(self):
         clear, resolution = self.filter.cal_img_resolution(self.image_cv)
         return not clear, resolution
 
     def get_image_brightness(self):
-        brightness = self.filter.cal_img_brightness(self.image_cv)
-        return brightness
-
-    def get_image_faceinfo(self):
-        # num, positions, landmarks = self.filter.get_img_face_info(self.image_cv)
-        num, positions, landmarks = self.filter.get_face_positions(self.image_cv)
-        if positions:
-            for pos in positions:
-                pos[0], pos[1], pos[2], pos[3] = (int(pos[0]), int(pos[1]),
-                                                  int(pos[2]), int(pos[3]))
-        logger.info('face number: {}, positions: {}'.format(num, positions))
-        return num, positions, landmarks
+        brightness, msg = self.filter.cal_img_brightness(self.image_cv)
+        return brightness, msg
 
     def get_face_blur(self, pos):
         xmin, ymin, xmax, ymax = pos[0], pos[1], pos[2], pos[3]
@@ -56,7 +35,7 @@ class QualityDetect(DetectBase):
 
     def get_face_attributes(self):
 
-        self.prepare_faceinfos()
+        # self.prepare_faceinfos()
 
         face_num = self.face_infos['face_num']
         landmarks = self.face_infos['face_landmarks']
@@ -80,24 +59,21 @@ class QualityDetect(DetectBase):
 
         return complexion_list, sex_list, race_list
 
+    def get_image_faceinfo(self):
+        # num, positions, landmarks = self.filter.get_img_face_info(self.image_cv)
+        num, face_normal_positions, landmarks = self.filter.get_face_positions(self.image_cv)
+        logger.info('face number: {}, positions: {}, landmarks: {}'.format(num, face_normal_positions, landmarks))
+        if face_normal_positions:
+            positions = [list(i.values()) for i in face_normal_positions]
+        logger.info('face number: {}, positions: {}'.format(num, positions))
+        return num, positions, landmarks, face_normal_positions
+
     def prepare_faceinfos(self):
 
         try:
             if not self.face_infos:
-                img_h, img_w, img_c = self.image_cv.shape
-                img_w_f, img_h_f = float(img_w), float(img_h)
-                face_num, face_positions, face_landmarks = self.get_image_faceinfo()
-                face_normal_positions = []
+                face_num, face_positions, face_landmarks, face_normal_positions = self.get_image_faceinfo()
                 face_positions = face_positions if face_num > 0 else []
-                for index, position in enumerate(face_positions):
-                    xmin, ymin, xmax, ymax = position[0], position[1], position[2], position[3]
-                    face_pos = {
-                        "xmin": round(xmin / img_w_f, 2),
-                        "ymin": round(ymin / img_h_f, 2),
-                        "xmax": round(xmax / img_w_f, 2),
-                        "ymax": round(ymax / img_h_f, 2)
-                    }
-                    face_normal_positions.append(face_pos)
 
                 self.face_infos = {
                     'face_num': face_num,
@@ -105,138 +81,170 @@ class QualityDetect(DetectBase):
                     'face_landmarks': face_landmarks,
                     'face_normal_positions': face_normal_positions
                 }
+                logger.info('face_infos %s', self.face_infos)
         except Exception as e:
             logger.error('prepare face info fail: {}'.format(e))
             logger.error(''.join(traceback.format_exception(*sys.exc_info())[-2:]))
 
-    def check_face_position(self, pos):
-        img_h, img_w, img_c = self.image_cv.shape
-        xmin, ymin, xmax, ymax = pos[0], pos[1], pos[2], pos[3]
-        face_w, face_h = xmax - xmin, ymax - ymin
-
-        is_big = face_h > 0.25 * img_h
-        is_small = face_h < 0.05 * img_h or face_w < 40 or face_h < 40
-        is_center = (xmin > 0.15 * img_w and xmin < 0.85 *
-                     img_w) and (ymin > 0 and ymax < 0.85 * img_h)
-        return is_big, is_small, is_center
+    # def check_face_position(self, pos):
+    #
+    #     img_h, img_w, img_c = self.image_cv.shape
+    #     xmin, ymin, xmax, ymax = pos[0], pos[1], pos[2], pos[3]
+    #     face_w, face_h = xmax - xmin, ymax - ymin
+    #
+    #     is_big = face_h > 0.25 * img_h
+    #     is_small = face_h < 0.05 * img_h or face_w < 40 or face_h < 40
+    #     is_center = (xmin > 0.15 * img_w and xmin < 0.85 *
+    #                  img_w) and (ymin > 0 and ymax < 0.85 * img_h)
+    #     return is_big, is_small, is_center
 
     def judge_image_shape(self):
         img_h, img_w, _ = self.image_cv.shape
         if self.image_source == 'ins':
             return min(img_h, img_w) > 720
-
-        return min(img_h, img_w) > 640 and max(img_h, img_w) < 1800
+        elif self.image_source == 'weibo':
+            return min(img_h, img_w) > 640 and max(img_h, img_w) < 1800
 
     def tag_base_info(self):
 
         base_tags = []
 
-        is_gray = self.is_gray_image()
-        if is_gray:
-            base_tags.append('filter-gray')
+        # is_gray = self.is_gray_image()
+        # if is_gray:
+        #     base_tags.append('filter-gray')
 
-        image_shape, flag = self.judge_image_shape()
+        normal = self.judge_image_shape()
+        if not normal:
+            base_tags.append('shape_unfit')
 
         blur, resolution = self.get_image_resolution()
         if blur:
             base_tags.append('filter-blur')
 
-        brightness = self.get_image_brightness()
-        if brightness == 'dark':
-            base_tags.append('filter-brightness-dark')
+        brightness, msg = self.get_image_brightness()
+        if brightness != 'norm':
+            base_tags.append(msg)
 
         return base_tags, {'image-blur': blur, 'image-resolution': resolution, 'image-shape': self.image_cv.shape}
 
-    def tag_faces_info(self, max_face_num=2):
+    # def old_tag_faces_info(self, max_face_num=2):
+    #
+    #     self.prepare_faceinfos()
+    #     face_num = self.face_infos['face_num']
+    #     if face_num == 0 or face_num > max_face_num:
+    #         return False, ['filter-face-num-manyornone'], None
+    #
+    #     faceinfo_tags = []
+    #     face_positions = self.face_infos['face_positions']
+    #     face_normal_positions = self.face_infos['face_normal_positions']
+    #     face_landmarks = self.face_infos['face_landmarks']
+    #     for index, position in enumerate(face_positions):
+    #         status, tag = self.tag_face_info(
+    #             index, position, face_normal_positions[index], face_landmarks[:, index])
+    #         if status:
+    #             faceinfo_tags.append(tag)
+    #         else:
+    #             return False, [tag], None
+    #
+    #     return True, None, faceinfo_tags
 
+    def tag_faces_info(self, max_face_num=3):
+        """
+        逻辑先跑通后面在慢慢调整
+        :param max_face_num:
+        :return:
+        """
         self.prepare_faceinfos()
         face_num = self.face_infos['face_num']
+
         if face_num == 0 or face_num > max_face_num:
-            return False, ['filter-face-num-manyornone'], None
+            return True, ['no-face'], None, 0
 
-        faceinfo_tags = []
-        face_positions = self.face_infos['face_positions']
+
+        face_positions: List[List] = self.face_infos['face_positions']
         face_normal_positions = self.face_infos['face_normal_positions']
-        face_landmarks = self.face_infos['face_landmarks']
-        for index, position in enumerate(face_positions):
-            status, tag = self.tag_face_info(
-                index, position, face_normal_positions[index], face_landmarks[:, index])
-            if status:
-                faceinfo_tags.append(tag)
-            else:
-                return False, [tag], None
-
-        return True, None, faceinfo_tags
-
-    def tag_face_info(self, index, position, normal_pos, landmarks):
-
-        fail_face_tag = {'face_index': index,
-                    'face_tags': []}
-
-        is_big, is_small, is_center = self.check_face_position(position)
-        if is_big or is_small:
-            fail_face_tag['face_tags'].append('filter-face-bigorsmall')
-        if not is_center:
-            fail_face_tag['face_tags'].append('filter-face-nocenter')
-
-        if is_big or is_small or not is_center:
-            return False, fail_face_tag
-
-        blur, resolution = self.get_face_blur(position)
-        if blur:
-            fail_face_tag['face_tags'].append('filter-face-blur')
-            return False, fail_face_tag
-
-        faceinfo = {"face_index": index,
-                    "face_resolution": resolution,
-                    "face_blur": blur}
-        landmark_list = landmarks.tolist()
-        face_lms_len = len(landmark_list)
-        landmark_info = {}
+        # face_landmarks = self.face_infos['face_landmarks']
+        face_filter_fail = True
         img_h, img_w, img_c = self.image_cv.shape
-        img_w_f, img_h_f = float(img_w), float(img_h)
-        for i in range(0, 5):
-            landmark_info["xmin%d" % i] = round(landmark_list[i] / img_w_f, 2)
-            landmark_info["ymin%d" % i] = round(
-                landmark_list[i+5] / img_h_f, 2)
-        faceinfo['landmark'] = landmark_info
-        faceinfo['postion'] = normal_pos
+        faceinfo_tags = face_normal_positions
+        new_face_positions = []
+        # img_w_f, img_h_f = float(img_w), float(img_h)
+        # face_positions = [list(map(lambda x: round(x / img_h, 3), i)) for i in face_positions]
+        logger.info('face_positions %s', face_positions)
+        for index, pos in enumerate(face_positions):
+            # 人脸高度全部大于0.4或者人脸高度全部小于0.05
+            xmin, ymin, xmax, ymax = pos[0], pos[1], pos[2], pos[3]
+            face_w, face_h = xmax - xmin, ymax - ymin
 
-        return True, faceinfo
+            # if 0.4*img_h_f > face_h > 0.05*img_h_f:
+            if 0.4 > face_h > 0.05:
+                face_filter_fail = False
+                logger.info('face_filter_fail: %s, pos: %s', face_filter_fail, pos)
+            elif face_h < 0.05:
+                new_face_positions.append(pos)
 
-    def tag_face_attributes(self):
+        new_face_num = len(new_face_positions)
+        if face_filter_fail:
+            msg = '人脸高度全部大于0.4或者人脸高度全部小于0.05'
+            return False, msg, faceinfo_tags, face_num
+        if new_face_num > 3:
+            face_filter_fail = True
+            msg = 'face_num>3'
+            return False, 'face_num>3', faceinfo_tags, new_face_num
+        elif new_face_num == 0:
+            face_filter_fail = False
+            msg = 'after filter no-face'
+            return True, ['after filter no-face'], faceinfo_tags, 0
+        else:
+            for index, pos in enumerate(new_face_positions):
+                # 去除人脸高度小于0.05) 再次过滤face_num_1 大于3,face_h_1大于0.4
 
-        complexion_list, sex_list, race_list = self.get_face_attributes()
-        landmarks = self.face_infos['face_landmarks']
-        positions = self.face_infos['face_normal_positions']
+                xmin, ymin, xmax, ymax = pos[0], pos[1], pos[2], pos[3]
+                face_w, face_h = xmax - xmin, ymax - ymin
+                if face_h > 0.4:
+                    msg = 'after filter face_h_1大于0.4 '
+                    return False, [msg], None, 0
 
-        faceattr_info_list = []
-        black_face = False
-        for position, complexion, sex, race in zip(positions, complexion_list, sex_list, race_list):
+        return True, None, faceinfo_tags, new_face_num
 
-            face_tags = []
-            if complexion == "black":
-                face_tags.append("filter-face-black")
-                black_face = True
-            elif complexion == "not_black":
-                face_tags.append("filter-face-notblack")
+    def tag_text_info(self):
+        return self.filter.get_img_text(self.image_cv) != 'norm'
 
-            if sex == "woman":
-                face_tags.append("filter-face-woman")
-            elif sex == "man":
-                face_tags.append("filter-face-man")
+    def get_face_complexion(self):
+        face_complexion_labels = self.filter.get_face_attributes(self.image_cv, 'complexion')
 
-            if race == "asia":
-                face_tags.append("filter-face-asia")
-            elif race == "europe":
-                face_tags.append("filter-face-europe")
+        if face_complexion_labels is None or 'black' in face_complexion_labels:  # 人脸肤色识别结果为空或者图像内有黑人
+            return False, face_complexion_labels
+        logger.info('face_complexion_labels: %s', face_complexion_labels)
+        return True, ''
 
-            if len(face_tags) > 0:
+    def test_img_clothes(self):
+        """
+        服装规则过滤
+        """
+        # 服装面积过滤
+        clothes_detect_results = self.filter.get_clothes_category_positions(self.image_cv)  # 服装一级标签以及位置信息
+        if len(clothes_detect_results) == 0:  # 无检测结果即无服装
+            return False, 'no clothes'
+        else:
+            level_one_labels = []
+            for clothes_detect_dict in clothes_detect_results:
+                label = clothes_detect_dict['label']
+                if label in self.uselessDetectClothesLabels:  # 鞋靴，帽子，包 等标签不进行服装面积阈值设定
+                    continue
 
-                faceattr_info = {
-                    'position': position,
-                    'tags': face_tags,
-                    "precision": 1
-                }
-                faceattr_info_list.append(faceattr_info)
-        return black_face, faceattr_info_list
+                level_one_labels.append(label)
+                xmin, ymin, xmax, ymax = max(0, float(clothes_detect_dict['xmin'])), max(0, float(
+                    clothes_detect_dict['ymin'])), min(1, float(clothes_detect_dict['xmax'])), min(1, float(
+                    clothes_detect_dict['ymax']))
+
+                clothes_h, clothes_w = ymax - ymin, xmax - xmin
+                # 服装面积过小 或者 过大
+                clothes_too_big = clothes_h > 0.9 and clothes_w > 0.9
+                clothes_too_tiny = clothes_h < 0.10 and clothes_w < 0.10
+                if clothes_too_tiny or clothes_too_big:
+                    return False, 'clothes_area unfit'
+            # 服装数量过滤
+            if len(level_one_labels) == 0:  # 无可用服装
+                return False, 'no clothes'
+        return True, 'clothes_filter-ok'
