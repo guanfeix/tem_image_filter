@@ -134,7 +134,7 @@ class QualityDetect(DetectBase):
         face_num = self.face_infos['face_num']
 
         if face_num == 0 or face_num > max_face_num:
-            return True, ['no-face'], None, 0
+            return True, ['no-face'], [], 0
 
         face_positions: List[List] = self.face_infos['face_positions']
         face_normal_positions = self.face_infos['face_normal_positions']
@@ -183,7 +183,7 @@ class QualityDetect(DetectBase):
                 face_w, face_h = xmax - xmin, ymax - ymin
                 if face_h > 0.4:
                     msg = 'after filter face_h_1大于0.4 '
-                    return False, [msg], None, new_face_num
+                    return False, [msg], [], new_face_num
 
         return True, None, face_normal_positions, new_face_num
 
