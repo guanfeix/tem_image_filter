@@ -2,6 +2,7 @@ import sys
 import traceback
 import logging
 
+import numpy as np
 from typing import List
 
 from .detect_base import DetectBase
@@ -65,7 +66,7 @@ class QualityDetect(DetectBase):
         positions = []
         if face_normal_positions:
             positions = [list(i.values()) for i in face_normal_positions]
-        logger.info('face number: {}, face_normal_positions: {}, positions: %s'.format(num, face_normal_positions, positions))
+        logger.info('face number: {}, face_normal_positions: {}, positions: {}'.format(num, face_normal_positions, positions))
         return num, positions, landmarks, face_normal_positions
 
     def prepare_faceinfos(self):
@@ -137,27 +138,32 @@ class QualityDetect(DetectBase):
 
         face_positions: List[List] = self.face_infos['face_positions']
         face_normal_positions = self.face_infos['face_normal_positions']
+        # np array
+        face_landmarks = self.face_infos['face_landmarks']
+
         face_filter_fail = True
         new_face_positions = []
         # img_w_f, img_h_f = float(img_w), float(img_h)
         # face_positions = [list(map(lambda x: round(x / img_h, 3), i)) for i in face_positions]
         logger.info('face_positions %s', face_positions)
         for index, pos in enumerate(face_positions):
-            # 人脸高度全部大于0.4或者人脸高度全部小于0.05
+            # 人脸高度全部大于0.4或者人脸高度全部小于0.05，才去除
             xmin, ymin, xmax, ymax = pos[0], pos[1], pos[2], pos[3]
             face_w, face_h = xmax - xmin, ymax - ymin
 
             # if 0.4*img_h_f > face_h > 0.05*img_h_f:
             if face_h > 0.05:
                 new_face_positions.append(pos)
-                if 0.4 > face_h:
+                if face_filter_fail and 0.4 > face_h:
                     face_filter_fail = False
                     logger.info('face_filter_fail: %s, pos: %s', face_filter_fail, pos)
+            else:
+                np.delete(face_landmarks, index, axis=1)
 
-            # elif face_h > 0.05:
-            #     new_face_positions.append(pos)
 
         new_face_num = len(new_face_positions)
+        self.face_infos['face_landmarks'] = face_landmarks
+        self.face_infos['face_num'] = new_face_num
         if face_filter_fail:
             msg = '人脸高度全部大于0.4或者人脸高度全部小于0.05'
             return False, msg, face_normal_positions, face_num
@@ -177,7 +183,7 @@ class QualityDetect(DetectBase):
                 face_w, face_h = xmax - xmin, ymax - ymin
                 if face_h > 0.4:
                     msg = 'after filter face_h_1大于0.4 '
-                    return False, [msg], None, 0
+                    return False, [msg], None, new_face_num
 
         return True, None, face_normal_positions, new_face_num
 
@@ -185,9 +191,12 @@ class QualityDetect(DetectBase):
         return self.filter.get_img_text(self.image_cv) != 'norm'
 
     def get_face_complexion(self):
-        face_positions, face_complexion_labels = self.filter.get_face_attributes(self.image_cv, 'complexion')
+        face_num = self.face_infos['face_num']
+        face_landmarks = self.face_infos['face_landmarks']
+        logger.info('face_infos %s', self.face_infos)
+        face_positions, face_complexion_labels = self.filter.get_face_complexion(self.image_cv, face_num, face_landmarks)
         print(face_complexion_labels)
-        if face_complexion_labels is None or 'black' in face_complexion_labels:  # 人脸肤色识别结果为空或者图像内有黑人
+        if face_complexion_labels is None or 'black' == face_complexion_labels:  # 人脸肤色识别结果为空或者图像内有黑人
             return True, face_complexion_labels
         logger.info('face_complexion_labels: %s', face_complexion_labels)
         return False, ''
