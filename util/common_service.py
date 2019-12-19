@@ -25,7 +25,7 @@ def pick_request_url(image_json):
     url = image_json['imageUrl'] if 'imageUrl' in image_json else image_json['url']
     if OSSURL_INTERNAL and 'oss-cn-hangzhou-internal' not in url:
         url = url.replace('oss-cn-hangzhou', 'oss-cn-hangzhou-internal')
-
+        logger.info('url: %s', url)
     return url
 
 def __get_server_ip():
