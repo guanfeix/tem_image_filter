@@ -43,11 +43,10 @@ class ImageFilterView(DetectView):
             json_data = json.loads(data)
             logger.info('request params: {}'.format(json_data))
 
-            # image_url = json_data['imageUrl']
+            url = json_data['imageUrl']
+            result['url'] = url
             image_url = pick_request_url(json_data)
-
             image_source = json_data['image_source']
-            result['url'] = image_url
             # 图片载入
             detect = QualityDetect(self.image_filter, image_url, image_source)
             detect.load_image_cv()
