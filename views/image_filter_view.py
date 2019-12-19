@@ -15,7 +15,7 @@ from .detect_view import DetectView
 from versioninfo import VersionInfo
 from detect.quality_detect import QualityDetect
 from util.statistics import statistics_recognize
-
+from util.common_service import pick_request_url
 import socket
 hostname = socket.gethostname()
 
@@ -43,7 +43,9 @@ class ImageFilterView(DetectView):
             json_data = json.loads(data)
             logger.info('request params: {}'.format(json_data))
 
-            image_url = json_data['imageUrl']
+            # image_url = json_data['imageUrl']
+            image_url = pick_request_url(json_data)
+
             image_source = json_data['image_source']
             result['url'] = image_url
             # 图片载入

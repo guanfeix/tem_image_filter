@@ -8,6 +8,7 @@ import psutil
 import platform
 
 from urllib import parse
+OSSURL_INTERNAL = os.getenv('OSSURL_INTERNAL', True)
 
 port = 0
 password = None
@@ -19,6 +20,13 @@ else:
 logger = logging.getLogger(__name__)
 logger.info('REDIS_URL: %s', REDIS_URL)
 
+
+def pick_request_url(image_json):
+    url = image_json['imageUrl'] if 'imageUrl' in image_json else image_json['url']
+    if OSSURL_INTERNAL and 'oss-cn-hangzhou-internal' not in url:
+        url = url.replace('oss-cn-hangzhou', 'oss-cn-hangzhou-internal')
+
+    return url
 
 def __get_server_ip():
     """
