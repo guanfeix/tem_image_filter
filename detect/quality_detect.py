@@ -209,7 +209,7 @@ class QualityDetect(DetectBase):
         clothes_detect_results = self.filter.get_clothes_category_positions(self.image_cv)  # 服装一级标签以及位置信息
         print(clothes_detect_results)
         if len(clothes_detect_results) == 0:  # 无检测结果即无服装
-            return False, 'no clothes'
+            return False, 'no clothes', ''
         else:
             level_one_labels = []
             for clothes_detect_dict in clothes_detect_results:
