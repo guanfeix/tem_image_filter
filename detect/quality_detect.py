@@ -194,12 +194,12 @@ class QualityDetect(DetectBase):
         face_num = self.face_infos['face_num']
         face_landmarks = self.face_infos['face_landmarks']
         logger.info('face_infos %s', self.face_infos)
-        face_positions, face_complexion_labels = self.filter.get_face_complexion(self.image_cv, face_num, face_landmarks)
+        face_complexion_labels: List[str] = self.filter.get_face_complexion(self.image_cv, face_num, face_landmarks)
         print(face_complexion_labels)
-        if face_complexion_labels is None or 'black' == face_complexion_labels:  # 人脸肤色识别结果为空或者图像内有黑人
+        if face_complexion_labels is None or 'black' in face_complexion_labels:  # 人脸肤色识别结果为空或者图像内有黑人
             return True, face_complexion_labels
         logger.info('face_complexion_labels: %s', face_complexion_labels)
-        return False, ''
+        return False, face_complexion_labels
 
     def test_img_clothes(self):
         """
@@ -207,6 +207,7 @@ class QualityDetect(DetectBase):
         """
         # 服装面积过滤
         clothes_detect_results = self.filter.get_clothes_category_positions(self.image_cv)  # 服装一级标签以及位置信息
+        print(clothes_detect_results)
         if len(clothes_detect_results) == 0:  # 无检测结果即无服装
             return False, 'no clothes'
         else:
@@ -226,8 +227,8 @@ class QualityDetect(DetectBase):
                 clothes_too_big = clothes_h > 0.9 and clothes_w > 0.9
                 clothes_too_tiny = clothes_h < 0.10 and clothes_w < 0.10
                 if clothes_too_tiny or clothes_too_big:
-                    return False, 'clothes_area unfit'
+                    return False, 'clothes_area unfit', clothes_detect_results
             # 服装数量过滤
             if len(level_one_labels) == 0:  # 无可用服装
-                return False, 'no clothes'
-        return True, 'clothes_filter-ok'
+                return False, 'no clothes', []
+        return True, 'clothes_filter-ok', clothes_detect_results

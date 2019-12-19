@@ -74,13 +74,19 @@ class ImageFilterView(DetectView):
 
             # 黑人图片去除
             if face_num > 0:
-                black_face, msg = detect.get_face_complexion()
-
+                black_face, face_complexion_list = detect.get_face_complexion()
+                # 记录每张脸的肤色信息
+                try:
+                    for i, face in enumerate(face_info_list):
+                        face['complexion'] = face_complexion_list[i]
+                except Exception as e:
+                    logger.exception('Complexion store error')
                 if black_face:
                     base_tag_list.append('filter-face-black')
 
-            is_ok, msg = detect.test_img_clothes()
 
+            is_ok, msg, clothes_detect_results = detect.test_img_clothes()
+            filter_tag_list['clothes_infos'] = clothes_detect_results
             text_exist = detect.tag_text_info()
 
             if not is_ok:
