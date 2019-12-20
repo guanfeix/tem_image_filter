@@ -147,11 +147,10 @@ class QualityDetect(DetectBase):
         # face_positions = [list(map(lambda x: round(x / img_h, 3), i)) for i in face_positions]
         logger.info('face_positions %s', face_positions)
         for index, pos in enumerate(face_positions):
-            # 人脸高度全部大于0.4或者人脸高度全部小于0.05，才去除
+            # 过滤高度小于0.05的人脸
             xmin, ymin, xmax, ymax = pos[0], pos[1], pos[2], pos[3]
             face_w, face_h = xmax - xmin, ymax - ymin
 
-            # if 0.4*img_h_f > face_h > 0.05*img_h_f:
             if face_h > 0.05:
                 new_face_positions.append(pos)
                 if face_filter_fail and 0.4 > face_h:
@@ -182,7 +181,7 @@ class QualityDetect(DetectBase):
                 xmin, ymin, xmax, ymax = pos[0], pos[1], pos[2], pos[3]
                 face_w, face_h = xmax - xmin, ymax - ymin
                 if face_h > 0.4:
-                    msg = 'after filter face_h_1大于0.4 '
+                    msg = 'face_h_1>0.4 '
                     return False, [msg], [], new_face_num
 
         return True, None, face_normal_positions, new_face_num
@@ -206,6 +205,7 @@ class QualityDetect(DetectBase):
         服装规则过滤
         """
         # 服装面积过滤
+        clothes_fail = True
         clothes_detect_results = self.filter.get_clothes_category_positions(self.image_cv)  # 服装一级标签以及位置信息
         print(clothes_detect_results)
         if len(clothes_detect_results) == 0:  # 无检测结果即无服装
@@ -224,10 +224,15 @@ class QualityDetect(DetectBase):
 
                 clothes_h, clothes_w = ymax - ymin, xmax - xmin
                 # 服装面积过小 或者 过大
-                clothes_too_big = clothes_h > 0.9 and clothes_w > 0.9
-                clothes_too_tiny = clothes_h < 0.10 and clothes_w < 0.10
-                if clothes_too_tiny or clothes_too_big:
-                    return False, 'clothes_area unfit', clothes_detect_results
+                clothes_too_big = clothes_h > 0.9 or clothes_w > 0.9
+                clothes_too_tiny = clothes_h < 0.10 or clothes_w < 0.10
+                if not (clothes_too_tiny or clothes_too_big):
+                    clothes_fail = False
+                return False, 'clothes_area unfit', clothes_detect_results
+                # if clothes_too_tiny or clothes_too_big:
+                #     return False, 'clothes_area unfit', clothes_detect_results
+            if clothes_fail:
+                return False, 'clothes_area unfit', clothes_detect_results
             # 服装数量过滤
             if len(level_one_labels) == 0:  # 无可用服装
                 return False, 'no clothes', []
