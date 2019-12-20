@@ -137,11 +137,12 @@ class QualityDetect(DetectBase):
             return True, ['no-face'], [], 0
 
         face_positions: List[List] = self.face_infos['face_positions']
-        face_normal_positions = self.face_infos['face_normal_positions']
+        face_normal_positions: List[dict] = self.face_infos['face_normal_positions']
         # np array
         face_landmarks = self.face_infos['face_landmarks']
 
-        face_filter_fail = True
+        face_filter_fail = False
+        msg = ''
         new_face_positions = []
         # img_w_f, img_h_f = float(img_w), float(img_h)
         # face_positions = [list(map(lambda x: round(x / img_h, 3), i)) for i in face_positions]
@@ -153,38 +154,30 @@ class QualityDetect(DetectBase):
 
             if face_h > 0.05:
                 new_face_positions.append(pos)
-                if face_filter_fail and 0.4 > face_h:
-                    face_filter_fail = False
+                # if face_filter_fail and 0.4 > face_h:
+                if face_h > 0.4:
+                    face_filter_fail = True
+                    msg = msg + 'face_h_1>0.4'
                     logger.info('face_filter_fail: %s, pos: %s', face_filter_fail, pos)
             else:
                 np.delete(face_landmarks, index, axis=1)
 
-
         new_face_num = len(new_face_positions)
         self.face_infos['face_landmarks'] = face_landmarks
         self.face_infos['face_num'] = new_face_num
-        if face_filter_fail:
-            msg = '人脸高度全部大于0.4或者人脸高度全部小于0.05'
-            return False, msg, face_normal_positions, face_num
-        if new_face_num > 3:
+
+        if new_face_num == 0:
             face_filter_fail = True
-            msg = 'face_num>3'
-            return False, 'face_num>3', face_normal_positions, new_face_num
-        elif new_face_num == 0:
-            face_filter_fail = False
-            msg = 'after filter no-face'
-            return True, ['after filter no-face'], face_normal_positions, 0
-        else:
-            for index, pos in enumerate(new_face_positions):
-                # 去除人脸高度小于0.05) 再次过滤face_num_1 大于3,face_h_1大于0.4
+            msg = msg+'all face<0.05'
+        elif new_face_num > 3:
+            # 过滤后人脸大于3
+            face_filter_fail = True
+            msg = msg+'face_num>3'
 
-                xmin, ymin, xmax, ymax = pos[0], pos[1], pos[2], pos[3]
-                face_w, face_h = xmax - xmin, ymax - ymin
-                if face_h > 0.4:
-                    msg = 'face_h_1>0.4 '
-                    return False, [msg], [], new_face_num
+        if face_filter_fail:
+            return False, msg, face_normal_positions, new_face_num
 
-        return True, None, face_normal_positions, new_face_num
+        return True, msg, face_normal_positions, new_face_num
 
     def tag_text_info(self):
         return self.filter.get_img_text(self.image_cv) != 'norm'
