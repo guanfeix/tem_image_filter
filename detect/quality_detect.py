@@ -34,32 +34,6 @@ class QualityDetect(DetectBase):
             self.image_cv[ymin:ymax, xmin:xmax])
         return not blur, resolution
 
-    def get_face_attributes(self):
-
-        # self.prepare_faceinfos()
-
-        face_num = self.face_infos['face_num']
-        landmarks = self.face_infos['face_landmarks']
-
-        final_landmarks = []
-        for index in range(face_num):
-            final_landmarks.append(landmarks[:, index])
-
-        logger.info('get face attr ...')
-        complexion_list = self.filter.get_face_attributes(
-            self.image_cv, final_landmarks, "complexion")
-        logger.info('complexion ok')
-
-        sex_list = self.filter.get_face_attributes(
-            self.image_cv, final_landmarks, "sex")
-        logger.info('sex ok')
-
-        race_list = self.filter.get_face_attributes(
-            self.image_cv, final_landmarks, "race")
-        logger.info('race ok')
-
-        return complexion_list, sex_list, race_list
-
     def get_image_faceinfo(self):
         # num, positions, landmarks = self.filter.get_img_face_info(self.image_cv)
         num, face_normal_positions, landmarks = self.filter.get_face_positions(self.image_cv)
@@ -86,18 +60,6 @@ class QualityDetect(DetectBase):
         except Exception as e:
             logger.error('prepare face info fail: {}'.format(e))
             logger.error(''.join(traceback.format_exception(*sys.exc_info())[-2:]))
-
-    # def check_face_position(self, pos):
-    #
-    #     img_h, img_w, img_c = self.image_cv.shape
-    #     xmin, ymin, xmax, ymax = pos[0], pos[1], pos[2], pos[3]
-    #     face_w, face_h = xmax - xmin, ymax - ymin
-    #
-    #     is_big = face_h > 0.25 * img_h
-    #     is_small = face_h < 0.05 * img_h or face_w < 40 or face_h < 40
-    #     is_center = (xmin > 0.15 * img_w and xmin < 0.85 *
-    #                  img_w) and (ymin > 0 and ymax < 0.85 * img_h)
-    #     return is_big, is_small, is_center
 
     def judge_image_shape(self):
         img_h, img_w, _ = self.image_cv.shape
@@ -133,8 +95,8 @@ class QualityDetect(DetectBase):
         self.prepare_faceinfos()
         face_num = self.face_infos['face_num']
 
-        if face_num == 0 or face_num > max_face_num:
-            return True, ['no-face'], [], 0
+        if face_num == 0:
+            return True, 'no-face', [], face_num
 
         face_positions: List[List] = self.face_infos['face_positions']
         face_normal_positions: List[dict] = self.face_infos['face_normal_positions']
@@ -169,10 +131,10 @@ class QualityDetect(DetectBase):
         if new_face_num == 0:
             face_filter_fail = True
             msg = msg+'all face<0.05'
-        elif new_face_num > 3:
-            # 过滤后人脸大于3
+        elif new_face_num > max_face_num:
+            # 过滤后人脸数大于max_face_num
             face_filter_fail = True
-            msg = msg+'face_num>3'
+            msg = msg+'face_num>%s'.format(max_face_num)
 
         if face_filter_fail:
             return False, msg, face_normal_positions, new_face_num
@@ -195,21 +157,19 @@ class QualityDetect(DetectBase):
 
     def test_img_clothes(self):
         """
-        服装规则过滤
+        服装规则过滤,要有一张合适尺寸的服装就OK保留
         """
         # 服装面积过滤
         clothes_fail = True
-        clothes_detect_results = self.filter.get_clothes_category_positions(self.image_cv)  # 服装一级标签以及位置信息
-        print(clothes_detect_results)
-        if len(clothes_detect_results) == 0:  # 无检测结果即无服装
-            return False, 'no clothes', ''
-        else:
-            level_one_labels = []
-            for clothes_detect_dict in clothes_detect_results:
+        level_one_labels = []
+        msg = ''
+        clothes_detect_results: List[dict] = self.filter.get_clothes_category_positions(self.image_cv)  # 服装一级标签以及位置信息
+
+        for clothes_detect_dict in clothes_detect_results:
                 label = clothes_detect_dict['label']
                 if label in self.uselessDetectClothesLabels:  # 鞋靴，帽子，包 等标签不进行服装面积阈值设定
                     continue
-
+                msg = 'clothes_area_unfit'
                 level_one_labels.append(label)
                 xmin, ymin, xmax, ymax = max(0, float(clothes_detect_dict['xmin'])), max(0, float(
                     clothes_detect_dict['ymin'])), min(1, float(clothes_detect_dict['xmax'])), min(1, float(
@@ -219,14 +179,15 @@ class QualityDetect(DetectBase):
                 # 服装面积过小 或者 过大
                 clothes_too_big = clothes_h > 0.9 or clothes_w > 0.9
                 clothes_too_tiny = clothes_h < 0.10 or clothes_w < 0.10
-                if not (clothes_too_tiny or clothes_too_big):
+                # 只要有一张合适尺寸的服装就OK保留
+                clothes_unfit = clothes_too_tiny or clothes_too_big
+                if not clothes_unfit:
                     clothes_fail = False
-                return False, 'clothes_area unfit', clothes_detect_results
-                # if clothes_too_tiny or clothes_too_big:
-                #     return False, 'clothes_area unfit', clothes_detect_results
-            if clothes_fail:
-                return False, 'clothes_area unfit', clothes_detect_results
-            # 服装数量过滤
-            if len(level_one_labels) == 0:  # 无可用服装
-                return False, 'no clothes', []
+                    msg = ''
+                    break
+
+        if len(level_one_labels) == 0 or len(clothes_detect_results) == 0:  # 无可用服装
+            msg = 'no available clothes'
+        if clothes_fail:
+            return False, msg, clothes_detect_results
         return True, 'clothes_filter-ok', clothes_detect_results

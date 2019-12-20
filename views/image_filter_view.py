@@ -50,13 +50,13 @@ class ImageFilterView(DetectView):
             # 图片载入
             detect = QualityDetect(self.image_filter, image_url, image_source)
             detect.load_image_cv()
-
+            # 基本信息
             base_tags, resolution_tag = detect.tag_base_info()
 
             logger.info('base info tags:{}, resolution: {}'.format(base_tags, resolution_tag))
             [base_tag_list.append(tag) for tag in base_tags]
             filter_tag_list['blur-resolution'] = resolution_tag
-
+            # 人脸过滤
             is_ok, fail_tag, face_normal_positions, face_num = detect.tag_faces_info()
 
             logger.info('face info is_ok: {}, fail_tags: {}, face_normal_positions: {}'.
@@ -84,10 +84,10 @@ class ImageFilterView(DetectView):
                     logger.exception('Complexion store error')
                 if black_face:
                     base_tag_list.append('filter-face-black')
-
-
+            # 衣物过滤
             is_ok, msg, clothes_detect_results = detect.test_img_clothes()
             filter_tag_list['clothes_infos'] = clothes_detect_results
+            # 文本过滤
             text_exist = detect.tag_text_info()
 
             if not is_ok:
