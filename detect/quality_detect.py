@@ -177,8 +177,8 @@ class QualityDetect(DetectBase):
 
                 clothes_h, clothes_w = ymax - ymin, xmax - xmin
                 # 服装面积过小 或者 过大
-                clothes_too_big = clothes_h > 0.9 or clothes_w > 0.9
-                clothes_too_tiny = clothes_h < 0.10 or clothes_w < 0.10
+                clothes_too_big = clothes_h > 0.9 and clothes_w > 0.9
+                clothes_too_tiny = clothes_h < 0.10 and clothes_w < 0.10
                 # 只要有一张合适尺寸的服装就OK保留
                 clothes_unfit = clothes_too_tiny or clothes_too_big
                 if not clothes_unfit:
