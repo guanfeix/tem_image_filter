@@ -70,7 +70,9 @@ class DetectBase(object):
             try:
                 time_start = time.time()
                 request = self.try_load_idc_image_cv(self.image_url, bstype) if hbase_enable else None
-                resize_url = '{}?{}'.format(self.image_url, 'x-oss-process=image/resize,l_1000')
+                resize_url = self.image_url
+                # 关闭照片缩放
+                # resize_url = '{}?{}'.format(self.image_url, 'x-oss-process=image/resize,l_1000')
                 request = urlopen(resize_url, timeout=60) if request == None else request
                 img_array = np.asarray(
                     bytearray(request.read()), dtype=np.uint8)
