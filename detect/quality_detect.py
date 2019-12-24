@@ -21,8 +21,8 @@ class QualityDetect(DetectBase):
         self.uselessDetectClothesLabels = ['帽子', '鞋靴', '包']
 
     def get_image_resolution(self):
-        clear, resolution = self.filter.cal_img_resolution(self.image_cv)
-        return not clear, resolution
+        clear, resolution, resolution_threshold = self.filter.cal_img_resolution(self.image_cv)
+        return not clear, resolution, resolution_threshold
 
     def get_image_brightness(self):
         brightness, msg = self.filter.cal_img_brightness(self.image_cv)
@@ -76,7 +76,7 @@ class QualityDetect(DetectBase):
         if not normal:
             base_tags.append('shape_unfit')
 
-        blur, resolution = self.get_image_resolution()
+        blur, resolution, resolution_threshold = self.get_image_resolution()
         if blur:
             base_tags.append('filter-blur')
 
@@ -84,7 +84,8 @@ class QualityDetect(DetectBase):
         if brightness != 'norm':
             base_tags.append(msg)
 
-        return base_tags, {'image-blur': blur, 'image-resolution': resolution, 'image-shape': self.image_cv.shape}
+        return base_tags, {'image-blur': blur, 'image-resolution': resolution,
+                           'resolution_threshold': resolution_threshold, 'image-shape': self.image_cv.shape}
 
     def tag_faces_info(self, max_face_num=3):
         """

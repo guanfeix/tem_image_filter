@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 pdir = pdir + '/models'
 models_path = {
     "face_detect_model_path": pdir + "/detect_model",
-    "clothes_detect_model_path": pdir + "/detect_model_v8_test.h5",
+    "clothes_detect_model_path": pdir + "/eland_detect_v3.h5",
     "complexion_model_path": pdir + "/complexion_model_v1.h5",
     'text_model_path': pdir + '/text_classify_v1.h5',
 }

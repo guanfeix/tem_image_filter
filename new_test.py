@@ -1,7 +1,8 @@
 import csv
 import json
-csv_file = '/Users/zy/Desktop/ins_tem_filter_view.csv'
-html_file = '/Users/zy/Desktop/ins_tem_filter_view.html'
+csv_file = '/Users/zy/Desktop/wb_tem_filter_view.csv'
+html_file_ok = '/Users/zy/Desktop/wb_tem_filter_view_new_old_ok.html'
+html_file_fail = '/Users/zy/Desktop/wb_tem_filter_view_new_fail.html'
 text_head = """<!DOCTYPE html>
 <html>
 <head>
@@ -49,23 +50,32 @@ text ="""  <div class="flex-item">
 text_tail = """</div>
 </body>
 </html>"""
-all_results = []
+all_results_ok = []
+all_results_fail = []
 with open(csv_file, encoding='UTF-8-sig') as f:
     csvReader = csv.DictReader(f)
     for content in csvReader:
-        # print(content)
         url = content['pic_oss_url']
         raw_json = content['raw_json']
         data = eval(raw_json)
         result = data['filter_result']
         filter_tags = data['filter_tags']
         reason = filter_tags.get('base_tags')
-        a=text.format(url,url,str(result)+str(reason))
-        all_results.append(a)
-        print(a,content)
+        item = text.format(url,url,str(result)+str(reason))
+        if result:
+            all_results_ok.append(item)
+        else:
+            all_results_fail.append(item)
+        print(item, content)
 
-all_results = ''.join(all_results)
-text = text_head+all_results+text_tail
-with open(html_file, 'w') as f:
-    f.write(text)
-    print('suc')
+all_results_ok = ''.join(all_results_ok)
+all_results_fail = ''.join(all_results_fail)
+text_ok = text_head+all_results_ok+text_tail
+text_fail = text_head+all_results_fail+text_tail
+with open(html_file_ok, 'w') as f:
+    f.write(text_ok)
+    print('suc--ok')
+
+with open(html_file_fail, 'w') as f:
+    f.write(text_fail)
+    print('suc--fail')

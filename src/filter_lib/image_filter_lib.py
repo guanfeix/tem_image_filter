@@ -107,7 +107,7 @@ class ImageFilter(object):
             img_channel = img.shape
             if len(img_channel) == 2:
                 return True
-            return  np.mean(img[:, :, 0]) == np.mean(img[:, :, 1])
+            return np.mean(img[:, :, 0]) == np.mean(img[:, :, 1])
         else:
             return None
 
@@ -142,9 +142,9 @@ class ImageFilter(object):
         """
         if not img is None:
             img_resolution = cv2.Laplacian(img, cv2.CV_64F).var()
-            return img_resolution > self.resolution_threshold, img_resolution
+            return img_resolution > self.resolution_threshold, img_resolution, self.resolution_threshold
         else:
-            return None, None
+            return None, None, self.resolution_threshold
         
     def cal_img_brightness(self, img):
         """

@@ -1,10 +1,12 @@
 import os
-import numpy as np
+import cv2
+
 from keras import backend as K
 from keras.layers import Input
-import cv2
+
+import numpy as np
 from PIL import Image
-from src.detect_all_lib.model import yolo_body, yolo_test
+from .model import yolo_body, yolo_test
 
 
 def resize_iamge(image, size):
@@ -33,13 +35,13 @@ def filter_invalid_box(box, label):
 	w_h = (xmax - xmin) * (ymax - ymin)
 
 	if label == '上衣' and ymin < 0.1 and ymax <= 0.45:
-# 		print("{}太小 : {},{},{},{}".format(label, xmin, ymin, xmax, ymax))
+		print("「」太小 : {},{},{},{}".format(label, xmin, ymin, xmax, ymax))
 		return False
 	if (label == '裤装' or label == '裙装') and ymax > 0.9 and ymin > 0.6:
-# 		print("{}太小 : {},{},{},{}".format(label, xmin, ymin, xmax, ymax))
+		print("{}太小 : {},{},{},{}".format(label, xmin, ymin, xmax, ymax))
 		return False
 	if w_h > 0.95:
-# 		print("面积过大 : {},{},{},{} {}".format(xmin, ymin, xmax, ymax, w_h))
+		print("面积过大 : {},{},{},{} {}".format(xmin, ymin, xmax, ymax, w_h))
 		return False
 	return True
 
@@ -91,7 +93,7 @@ class YOLO(object):
 		self.input_image_shape = K.placeholder(shape=(2,))
 		self.yolo_model = yolo_body(Input(shape=(None, None, 3)), num_anchors // 3, num_classes)
 		self.yolo_model.load_weights(self.model_path)
-		# print('{} model, anchors, and classes loaded.'.format(model_path))
+		print('{} model, anchors, and classes loaded.'.format(model_path))
 		boxes, scores, classes = yolo_test(self.yolo_model.output, self.anchors,
 		                                   num_classes, self.input_image_shape, score_threshold=self.score,
 		                                   iou_threshold=self.iou)
@@ -99,24 +101,15 @@ class YOLO(object):
 
 	def __init__(self, model_path='model_path/detect_model_v7.h5'):
 		self.model_path = model_path
-		# 检测成绩改为0.30
-		self.score = 0.3
+		# 检测成绩改为0.40
+		self.score = 0.4
 		self.iou = 0.45
 
-		# self.class_names = ['上衣','裙装','裤装','幼童装','鞋靴','包','帽子','人','人脸']
-		# self.anchors = [24,33, 37,41, 58,62, 79,99, 99,216, 137,374, 145,145, 199,349, 291,378]
-
-		# V7版本
-		#self.class_names = ['上衣', '裤装', '裙装', '包', '鞋靴', '帽子']
-		#self.anchors = [29,41, 45,55, 54,33, 79,64, 112,124, 128,212, 187,162, 212,303, 349,357]
-
-
-		#V8_test 版本
+		#衣念V1 版本
 		self.class_names = ['上衣', '裤装', '裙装', '包', '鞋靴', '帽子']
-		self.anchors = [33,33, 45,54, 87,70, 120,149, 162,270, 191,174, 224,353, 295,291, 359,378]
+		self.anchors = [33,37, 49,58, 91,49, 112,108, 137,178, 178,282, 257,174, 262,328, 361,370]
 
 		self.anchors = np.array(self.anchors).reshape(-1, 2)
-
 		self.sess = K.get_session()
 		self.model_image_size = (416, 416)
 		self.boxes, self.scores, self.classes = self.init_model()
@@ -130,6 +123,8 @@ class YOLO(object):
 		image_data /= 255.
 		image_data = np.expand_dims(image_data, 0)
 		img_w, img_h = image.size
+
+		print("img_h:{}  img_w:{}".format(img_h, img_w))
 
 		out_boxes, out_scores, out_classes = self.sess.run(
 			[self.boxes, self.scores, self.classes],
@@ -166,6 +161,7 @@ class YOLO(object):
 					continue
 
 				labelList.append({"xmin": str(xmin), "ymin": str(ymin), "xmax": str(xmax), "ymax": str(ymax),"label": str(predicted_class), "score": str(score)})
+		print("laeblList : {}".format(labelList))
 		return labelList
 
 	def close_session(self):
