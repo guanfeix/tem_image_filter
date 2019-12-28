@@ -84,7 +84,7 @@ class QualityDetect(DetectBase):
         if brightness != 'norm':
             base_tags.append(msg)
 
-        return base_tags, {'image-blur': blur, 'image-resolution': resolution,
+        return base_tags, {'image-blur': blur, 'image-resolution': resolution, 'image_source': self.image_source,
                            'resolution_threshold': resolution_threshold, 'image-shape': self.image_cv.shape}
 
     def tag_faces_info(self, max_face_num=3):

@@ -173,7 +173,6 @@ class StatisticsThread(threading.Thread):
                 redis_client.expire(hash_table,timedelta(days=30))
                 logger.info('hash_table: {}, field: {}, new_dic: {}'.format(hash_table, node, service_dic))
 
-
     def refresh_interval(self):
         self.interval = int(redis_client.hget('Deep_fashion', 'interval') or 10)
         logger.info('Interval was refresh,interval={}'.format(self.interval))
