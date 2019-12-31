@@ -4,6 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class VersionInfo(object):
 
     def __init__(self):

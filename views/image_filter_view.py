@@ -1,22 +1,18 @@
-from flask import Flask
+import sys
+import json
+import socket
+import logging
+import traceback
+
 from flask import request
 from flask import make_response, jsonify
-from flask.views import View
-
-import traceback
-import sys
-import time
-import json
-import logging
-
-logger = logging.getLogger(__name__)
 
 from .detect_view import DetectView
-from versioninfo import VersionInfo
 from detect.quality_detect import QualityDetect
 from util.statistics import statistics_recognize
 from util.common_service import pick_request_url
-import socket
+
+from service.logging_service import logger
 hostname = socket.gethostname()
 
 
@@ -24,7 +20,6 @@ class ImageFilterView(DetectView):
 
     methods = ['POST']
     decorators = [statistics_recognize('TemImageFilter')]
-    # @statistics_recognize('ImageFilter')
 
     def dispatch_request(self):
         result = {
@@ -66,11 +61,12 @@ class ImageFilterView(DetectView):
             filter_tag_list['face_infos'] = face_info_list
             for index, pos in enumerate(face_normal_positions):
                 face_info_list.append({"face_index": index,  "postion": pos})
+            # 提供全量的图片信息不中途返回
 
-            if not is_ok:
-                base_tag_list.append(fail_tag)
-                logger.info('result: {}'.format(result))
-                return make_response(jsonify(result), 200)
+            # if not is_ok:
+            #     base_tag_list.append(fail_tag)
+            #     logger.info('result: {}'.format(result))
+            #     return make_response(jsonify(result), 200)
 
 
             # 黑人图片去除
@@ -90,6 +86,7 @@ class ImageFilterView(DetectView):
             # 文本过滤
             text_exist = detect.tag_text_info()
 
+            clothe_only_ok = is_ok and not text_exist
             if not is_ok:
                 base_tag_list.append(msg)
             if text_exist:
@@ -100,7 +97,7 @@ class ImageFilterView(DetectView):
             if quality_ok:
                 base_tag_list.append('filter-quality-ok')
                 result['filter_result'] = True 
-
+            result['clothe_only_ok'] = clothe_only_ok
             logger.info('result: {}'.format(result))
             return make_response(jsonify(result), 200)
 

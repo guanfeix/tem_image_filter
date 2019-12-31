@@ -20,6 +20,9 @@ models_path = {
 
 
 class ImageFilterConstructor(object):
+    """
+    抽象和具体分离，抽象不依赖与具体实现
+    """
     def __init__(self):
         pass
 

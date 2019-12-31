@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class QualityDetect(DetectBase):
 
-    def __init__(self, filter, image_url, image_source='weibo',image_cv=None):
+    def __init__(self, filter, image_url, image_source='weibo', image_cv=None):
 
         super(QualityDetect, self).__init__(image_url, image_cv)
         self.filter = filter

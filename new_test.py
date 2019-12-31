@@ -1,8 +1,8 @@
 import csv
 import json
-csv_file = '/Users/zy/Desktop/wb_tem_filter_view.csv'
-html_file_ok = '/Users/zy/Desktop/wb_tem_filter_view_new_old_ok.html'
-html_file_fail = '/Users/zy/Desktop/wb_tem_filter_view_new_fail.html'
+csv_file = '/Users/zy/Desktop/wb_tem_filter_view_latest.csv'
+html_file_ok = '/Users/zy/Desktop/wb_tem_filter_view_latest_ok.html'
+html_file_fail = '/Users/zy/Desktop/wb_tem_filter_view_latest_fail.html'
 text_head = """<!DOCTYPE html>
 <html>
 <head>
