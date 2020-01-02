@@ -9,30 +9,15 @@ import traceback
 import hashlib
 
 from urllib.request import urlopen
+
 from io import BytesIO
 from PIL import Image
 
 
 logger = logging.getLogger(__name__)
 
-hbase_hosts = os.getenv('HBASE_HOSTS', 'cpu005,cpu006,cpu007').split(',')
-hbase_hosts_size = len(hbase_hosts)
-hbase_rest = 'http://{}:8806/image/{}/{}'
 hbase_enable = os.getenv('HBASE_ENABLE', '1')
-
-bstype_dict = {
-    'ins': 'ins',
-    'instagram': 'ins',
-    'pop': 'pop',
-    'show': 'show',
-    'pop_show': 'show',
-    'vogue_runway': 'show',
-    'runway': 'show',
-    'market': 'market',
-    'diotion': 'diotion',
-}
-
-bstype_list = ['ins', 'show', 'market', 'diotion', 'pop']
+hbase_rest = 'http://gpu012:8082/image/show-image?rowKey={}'
 
 
 class DetectBase(object):
@@ -65,17 +50,17 @@ class DetectBase(object):
         return self.image_pil
 
     def load_image_cv(self, bstype=None):
-
+        """
+        先从hbase 下，hbase找不到再从内网
+        使用requests
+        :param bstype:
+        :return:
+        """
         if not self.image_cv:
             try:
                 time_start = time.time()
-                request = self.try_load_idc_image_cv(self.image_url, bstype) if hbase_enable else None
-                resize_url = self.image_url
-                # 关闭照片缩放
-                # resize_url = '{}?{}'.format(self.image_url, 'x-oss-process=image/resize,l_1000')
-                request = urlopen(resize_url, timeout=60) if request == None else request
-                img_array = np.asarray(
-                    bytearray(request.read()), dtype=np.uint8)
+                data = self.load_image()
+                img_array = np.asarray(bytearray(data), dtype=np.uint8)
                 self.image_cv = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
                 logger.info('image [{}] cv loaded: {}, cost time: {}'.format(
                     self.image_url, self.image_cv.shape, time.time()-time_start))
@@ -85,41 +70,32 @@ class DetectBase(object):
                 return None, err
         return self.image_cv, None
 
-    @classmethod
-    def get_bstype(self, url):
-        
-        for k in bstype_dict.keys():
-            if k in url:
-               return bstype_dict[k]
-        return 'ins'
+    def load_image(self):
+        """
+        我不太习惯这种过程和调用分开，太细了，我都是直接撸
+        :return:
+        """
+        response = self.try_load_idc_image(self.image_url) if hbase_enable else None
+        response = requests.get(self.image_url, timeout=60) if response is None else response
 
-    def try_load_idc_image_cv(self, url, bstype=None):
+        return response.content
 
+    def try_load_idc_image(self, url):
         hbase_url = None
         try:
-            bstype = bstype if bstype else self.get_bstype(url)
             ori_url = url
-            if 'hangzhou-internal' in url:
-                ori_url = url.replace('hangzhou-internal', 'hangzhou')
-            time_start = time.time()
-            hbase_host = hbase_hosts[int(time_start) % hbase_hosts_size]
-            rowkey = self.md5_url(ori_url)
-            request_tables = [bstype]
-            [request_tables.append(x) for x in bstype_list if x != bstype]
-            for table in request_tables:
-                hbase_url = hbase_rest.format(hbase_host, table, rowkey)
-                logger.info("urlopen url: {}".format(hbase_url))
-                request = urlopen(hbase_url, timeout=30)
-                image_length = int(request.headers['content-length'])
-                logger.info('load image from idc, image length: {}, cost time: {}'.format(
-                    image_length, time.time() - time_start))
-                if image_length > 512:
-                    logger.info('download image from idc: {}'.format(hbase_url))
-                    return request
+            if 'hangzhou-internal.' in url:
+                ori_url = url.replace('hangzhou-internal.', 'hangzhou.')
+            row_key = self.md5_url(ori_url)
+            hbase_url = hbase_rest.format(row_key)
+            logger.info('hbase url: {}'.format(hbase_url))
+            response = requests.get(hbase_url, timeout=30)
+            image_length = int(response.headers['content-length'])
+            if image_length > 512:
+                logger.info('success to load image from hbase: {}, length: {}'.format(hbase_url, image_length))
+                return response
         except Exception as e:
             logger.error('urlopen {} [{}] fail: {}'.format(hbase_url, url, e))
-        
-        return None
 
     def cut_images_simple(self, image_cv, positions):
         img_h, img_w, _ = image_cv.shape

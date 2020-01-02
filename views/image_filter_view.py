@@ -86,7 +86,7 @@ class ImageFilterView(DetectView):
             # 文本过滤
             text_exist = detect.tag_text_info()
 
-            clothe_only_ok = is_ok and not text_exist
+            clothes_only_ok = is_ok and not text_exist
             if not is_ok:
                 base_tag_list.append(msg)
             if text_exist:
@@ -97,7 +97,7 @@ class ImageFilterView(DetectView):
             if quality_ok:
                 base_tag_list.append('filter-quality-ok')
                 result['filter_result'] = True 
-            result['clothe_only_ok'] = clothe_only_ok
+            result['clothes_only_ok'] = clothes_only_ok
             logger.info('result: {}'.format(result))
             return make_response(jsonify(result), 200)
 
