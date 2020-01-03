@@ -8,12 +8,14 @@ from flask import request
 from flask import make_response, jsonify
 
 from .detect_view import DetectView
+from dynaconf import settings
 from detect.quality_detect import QualityDetect
 from util.statistics import statistics_recognize
 from util.common_service import pick_request_url
 
 from service.logging_service import logger
 hostname = socket.gethostname()
+duplicate = settings.DEDUPLICATE
 
 
 class ImageFilterView(DetectView):
@@ -86,6 +88,15 @@ class ImageFilterView(DetectView):
             # 文本过滤
             text_exist = detect.tag_text_info()
 
+            # 去重检测
+            if duplicate:
+                hash_result, dups = detect.filter_dedup_image(url)
+                # feature_hash: int = hash_result[1]
+                is_dup = True if dups else False
+                result['duplicated'] = is_dup
+                result['duplicated_features'] = dups
+                result['feature_hash'] = hash_result[1]
+
             clothes_only_ok = is_ok and not text_exist
             if not is_ok:
                 base_tag_list.append(msg)
@@ -97,7 +108,7 @@ class ImageFilterView(DetectView):
             if quality_ok:
                 base_tag_list.append('filter-quality-ok')
                 result['filter_result'] = True 
-            result['clothes_only_ok'] = clothes_only_ok
+            result['filter_result_V2'] = clothes_only_ok
             logger.info('result: {}'.format(result))
             return make_response(jsonify(result), 200)
 

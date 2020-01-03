@@ -3,9 +3,11 @@ import traceback
 import logging
 
 import numpy as np
-from typing import List
+from typing import List, Any
 
 from .detect_base import DetectBase
+from hash.image_hash_worker import ImageHashWorker
+from hash.sim_hash_index import SimHashIndex
 
 logger = logging.getLogger(__name__)
 
@@ -13,12 +15,16 @@ logger = logging.getLogger(__name__)
 class QualityDetect(DetectBase):
 
     def __init__(self, filter, image_url, image_source='weibo', image_cv=None):
-
+        # image_url 内网照片url
         super(QualityDetect, self).__init__(image_url, image_cv)
         self.filter = filter
         self.face_infos = None
         self.image_source = image_source
         self.uselessDetectClothesLabels = ['帽子', '鞋靴', '包']
+        # 新增去重
+        self.image_worker = ImageHashWorker()
+        # self.image_worker = ImageHashWorker(prefix=True, internal=True)
+        self.hash_index = SimHashIndex()
 
     def get_image_resolution(self):
         clear, resolution, resolution_threshold = self.filter.cal_img_resolution(self.image_cv)
@@ -192,3 +198,21 @@ class QualityDetect(DetectBase):
         if clothes_fail:
             return False, msg, clothes_detect_results
         return True, 'clothes_filter-ok', clothes_detect_results
+
+    def filter_dedup_image(self, url):
+        # 复用了image 的content
+        logger.info('deduplicte image: {}'.format(url))
+        # [url, feature_hash]
+        hash_result: List[Any] = self.image_worker.filter_hash_image(url, self.data)
+        logger.info('hash result: {}'.format(hash_result))
+        dups = None
+        if hash_result:
+            feature_hash = hash_result[1]
+            # 里面存的p_hash value
+            dups: List[int] = self.hash_index.check_if_exist(feature_hash, feature_hash)
+
+        if dups:
+            logger.info('dups: {}'.format(dups))
+        else:
+            logger.info('there is no duplicate image for: {}'.format(url))
+        return hash_result, dups

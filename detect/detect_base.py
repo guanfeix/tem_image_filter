@@ -26,6 +26,7 @@ class DetectBase(object):
         self.image_url = image_url
         self.image_pil = image_pil
         self.image_cv = image_cv
+        self.data = None
 
     @classmethod
     def md5_url(self, url):
@@ -59,8 +60,8 @@ class DetectBase(object):
         if not self.image_cv:
             try:
                 time_start = time.time()
-                data = self.load_image()
-                img_array = np.asarray(bytearray(data), dtype=np.uint8)
+                self.data = self.load_image()
+                img_array = np.asarray(bytearray(self.data), dtype=np.uint8)
                 self.image_cv = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
                 logger.info('image [{}] cv loaded: {}, cost time: {}'.format(
                     self.image_url, self.image_cv.shape, time.time()-time_start))
