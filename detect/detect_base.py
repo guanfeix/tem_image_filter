@@ -76,12 +76,12 @@ class DetectBase(object):
         我不太习惯这种过程和调用分开，太细了，我都是直接撸
         :return:
         """
-        response = self.try_load_idc_image(self.image_url) if hbase_enable else None
+        response = self.try_load_hbase_image(self.image_url) if hbase_enable else None
         response = requests.get(self.image_url, timeout=60) if response is None else response
 
         return response.content
 
-    def try_load_idc_image(self, url):
+    def try_load_hbase_image(self, url):
         hbase_url = None
         try:
             ori_url = url

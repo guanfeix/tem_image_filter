@@ -89,6 +89,7 @@ class ImageFilterView(DetectView):
             text_exist = detect.tag_text_info()
 
             # 去重检测
+            is_dup = False
             if duplicate:
                 hash_result, dups = detect.filter_dedup_image(url)
                 # feature_hash: int = hash_result[1]
@@ -97,15 +98,15 @@ class ImageFilterView(DetectView):
                 result['duplicated_features'] = dups
                 result['feature_hash'] = hash_result[1]
 
-            clothes_only_ok = is_ok and not text_exist
+            clothes_only_ok = is_ok and not text_exist and not is_dup
             if not is_ok:
                 base_tag_list.append(msg)
             if text_exist:
                 base_tag_list.append('text_exist')
 
-            quality_ok = len(base_tag_list) == 0
+            quality_fail = base_tag_list or is_dup
 
-            if quality_ok:
+            if not quality_fail:
                 base_tag_list.append('filter-quality-ok')
                 result['filter_result'] = True 
             result['filter_result_V2'] = clothes_only_ok
