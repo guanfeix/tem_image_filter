@@ -6,7 +6,7 @@ from flask import make_response, jsonify
 # sys.path.append('..')
 print(sys.path)
 
-from util.common_service import redis_client
+from service.redis_service import redis_client
 from views.statistics_view import StatisticsView, GraphView
 
 
@@ -51,6 +51,7 @@ def test():
 @app.route('/', endpoint='index')
 def hello_world():
     return 'Hello World!'
+
 
 if __name__ == '__main__':
     # print(app.url_map)

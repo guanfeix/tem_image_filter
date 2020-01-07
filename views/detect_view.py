@@ -1,19 +1,9 @@
-from flask import Flask
-from flask import request
-from flask import make_response, jsonify
+import socket
+
 from flask.views import View
-
-import traceback
-import sys
-import time
-import json
-import logging
-
-logger = logging.getLogger(__name__)
 
 from versioninfo import VersionInfo
 
-import socket
 hostname = socket.gethostname()
 
 
@@ -39,76 +29,73 @@ class DetectView(View):
     reporter = None
 
     @classmethod
-    def init_version(self):
-        self.version = VersionInfo()
+    def init_version(cls):
+        cls.version = VersionInfo()
 
     @classmethod
-    def init_reporter(self, reporter):
-        self.reporter = reporter
+    def init_reporter(cls, reporter):
+        cls.reporter = reporter
 
     @classmethod
-    def init_filter(self, image_filter):
-        self.image_filter = image_filter
+    def init_filter(cls, image_filter):
+        cls.image_filter = image_filter
 
     @classmethod
-    def init_color_detect(self, color_detect):
-        self.color_detect = color_detect
+    def init_color_detect(cls, color_detect):
+        cls.color_detect = color_detect
 
     @classmethod
-    def init_color_recognition(self, color_recognition):
-        self.color_recognition = color_recognition
+    def init_color_recognition(cls, color_recognition):
+        cls.color_recognition = color_recognition
 
     @classmethod
-    def init_detect(self, category_detect):
-        self.category_detect = category_detect
+    def init_detect(cls, category_detect):
+        cls.category_detect = category_detect
 
     @classmethod
-    def init_all_detect(self, category_all_detect):
-        self.category_all_detect = category_all_detect
+    def init_all_detect(cls, category_all_detect):
+        cls.category_all_detect = category_all_detect
 
     @classmethod
-    def init_recognition(self, category_recognition):
-        self.category_recognition = category_recognition
+    def init_recognition(cls, category_recognition):
+        cls.category_recognition = category_recognition
 
     @classmethod
-    def init_clothes_recognition(self, clothes_recognition):
-        self.clothes_recognition = clothes_recognition
+    def init_clothes_recognition(cls, clothes_recognition):
+        cls.clothes_recognition = clothes_recognition
 
     @classmethod
-    def init_clothes_region(self, clothes_region):
-        self.clothes_region = clothes_region
+    def init_clothes_region(cls, clothes_region):
+        cls.clothes_region = clothes_region
 
     @classmethod
-    def init_clothes_technology(self, clothes_technology):
-        self.clothes_technology = clothes_technology
+    def init_clothes_technology(cls, clothes_technology):
+        cls.clothes_technology = clothes_technology
 
     @classmethod
-    def init_clothes_texture(self, clothes_texture):
-        self.clothes_texture = clothes_texture
+    def init_clothes_texture(cls, clothes_texture):
+        cls.clothes_texture = clothes_texture
 
     @classmethod
-    def init_clothes_style(self, clothes_style):
-        self.clothes_style = clothes_style
+    def init_clothes_style(cls, clothes_style):
+        cls.clothes_style = clothes_style
 
     @classmethod
-    def init_clothes_fabric(self, clothes_fabric):
-        self.clothes_fabric = clothes_fabric
+    def init_clothes_fabric(cls, clothes_fabric):
+        cls.clothes_fabric = clothes_fabric
 
     @classmethod
-    def init_clothes_type(self, clothes_type):
-        self.clothes_type = clothes_type
+    def init_clothes_type(cls, clothes_type):
+        cls.clothes_type = clothes_type
 
     @classmethod
-    def init_clothes_material(self, clothes_material):
-        self.clothes_material = clothes_material
+    def init_clothes_material(cls, clothes_material):
+        cls.clothes_material = clothes_material
 
     @classmethod
-    def init_score(self, image_score):
-        self.image_score = image_score
+    def init_score(cls, image_score):
+        cls.image_score = image_score
 
     @classmethod
-    def init_synthesize_recognition(self, synthesize_recognition):
-        self.synthesize_recognition = synthesize_recognition
-
-    def dispatch_request(self):
-        pass
+    def init_synthesize_recognition(cls, synthesize_recognition):
+        cls.synthesize_recognition = synthesize_recognition

@@ -1,11 +1,11 @@
-'''
+"""
 服装图像过滤器lib:
     为服装打上相关TAG:
         1.图像面积是否达标
         2.是否为灰度图
         3.分辨率是否较高
         4.是否为暗系图
-        5.是否为黑白图 
+        5.是否为黑白图
         6.人脸:
             1.人脸数量,人脸位置
             2.人脸肤色
@@ -13,10 +13,11 @@
             1. 服装占比
             2. 服装种类
         8. 图像中是否存在大量文本
-'''
+"""
 
 import cv2
 import numpy as np
+from decimal import Decimal
 from ..recognition_lib.complexion import complexionRecognition
 from ..detect_all_lib.face_detection import faceDetect, alignment
 from ..detect_all_lib.yolo_detection import YOLO
@@ -47,23 +48,23 @@ class ImageFilter(object):
         self.face_detect_model = faceDetect(self.face_detect_model_path)
         self.face_complexion_model = complexionRecognition(
             self.complexion_model_path)
-        
+
         # 服装检测模型初始化
-        self.clothes_detecter= YOLO(self.clothes_detect_model_path)
-       
+        self.clothes_detecter = YOLO(self.clothes_detect_model_path)
+
         # 分辨率最低阈值 亮度阈值 最小边阈值 最大边阈值
         self.resolution_threshold = resolution_threshold
         self.brightness_threshold = brightness_threshold
         self.min_side_threshold = min_side_threshold
         self.max_side_threshold = max_side_threshold
-        
+
         # 人脸属性
         self.face_attributes_list = face_attributes_list
 
         # 获取文字识别模型地址，并加载文字识别模型
         self.text_model_path = text_model_path
-        self.text_model = textRecognition(modelPath = self.text_model_path)
-        
+        self.text_model = textRecognition(modelPath=self.text_model_path)
+
     def cal_img_min_side(self, img):
         """
         计算图像的最小边长
@@ -75,10 +76,10 @@ class ImageFilter(object):
         """
         if not img is None:
             img_h, img_w, _ = img.shape
-            return  min(img_h, img_w) >= self.min_side_threshold
+            return min(img_h, img_w) >= self.min_side_threshold
         else:
             return None
-        
+
     def cal_img_max_side(self, img):
         """
         计算图像的最大边长
@@ -90,7 +91,7 @@ class ImageFilter(object):
         """
         if not img is None:
             img_h, img_w, _ = img.shape
-            return  max(img_h, img_w) <= self.max_side_threshold
+            return max(img_h, img_w) <= self.max_side_threshold
         else:
             return None
 
@@ -124,9 +125,9 @@ class ImageFilter(object):
         if not img is None:
             img_h, img_w = img.shape[:2]
             img_bw = np.reshape(img, (-1, 3))
-            black_num = len(np.where(np.sum(img_bw, axis=1) == 255*3)[0])
+            black_num = len(np.where(np.sum(img_bw, axis=1) == 255 * 3)[0])
             white_num = len(np.where(np.sum(img_bw, axis=1) == 0)[0])
-            return black_num+white_num == img_h*img_w
+            return black_num + white_num == img_h * img_w
         else:
             return None
 
@@ -145,7 +146,7 @@ class ImageFilter(object):
             return img_resolution > self.resolution_threshold, img_resolution, self.resolution_threshold
         else:
             return None, None, self.resolution_threshold
-        
+
     def cal_img_brightness(self, img):
         """
         使用HLS通道对lightness去除极值(亮度为0和255)后进行平均计算
@@ -155,23 +156,20 @@ class ImageFilter(object):
            dark:暗系图像
            norm:正常图像
         """
-        if not img is None:
+        if img is not None:
             if len(img.shape) == 2:
                 return None, 'is_gray'
+            hls_img = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
+            lightness_result_ = hls_img[:, :, 1]
+            # 删除极值
+            lightness_result_ = lightness_result_[np.where((lightness_result_ != 0) & (lightness_result_ != 255))]
+            lightness_result = np.sum(lightness_result_) / (hls_img.shape[0] * hls_img.shape[1])
+            if lightness_result < self.brightness_threshold:
+                result = ('dark', 'filter-brightness-dark')
             else:
-                hls_img = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
-                lightness_result_ = hls_img[:, :, 1]
-                lightness_result_ = lightness_result_[np.where((lightness_result_!=0)& (lightness_result_!=255))] # 删除极值
-                lightness_result = np.sum(lightness_result_)/(hls_img.shape[0]*hls_img.shape[1])
-                if lightness_result < self.brightness_threshold:
-                    result = ('dark', 'filter-brightness-dark')
-                else:
-                    result = ('norm', '')
-                return result
-        else:
-            return None, 'no image'
-
-   
+                result = ('norm', '')
+            return result
+        return None, 'no image'
 
     def get_face_positions(self, img):
         """
@@ -192,8 +190,18 @@ class ImageFilter(object):
             img_h, img_w = img.shape[:2]
             for index, bounding_box in enumerate(bounding_boxes):
                 xmin, ymin, xmax, ymax, _ = bounding_box
-                face_positions.append({"xmin": round(xmin/img_w, 3), "ymin": round(
-                    ymin/img_h, 3), "xmax": round(xmax/img_w, 3), "ymax": round(ymax/img_h, 3)})
+                # face_positions.append({
+                    # "xmin": round(xmin / img_w, 3),
+                    # "ymin": round(ymin / img_h, 3),
+                    # "xmax": round(xmax / img_w, 3),
+                    # "ymax": round(ymax / img_h, 3)})
+                face_positions.append({
+                    "xmin": float(Decimal(float(xmin/img_w)).quantize(Decimal('1.000'))),
+                    "ymin": float(Decimal(float(ymin/img_h)).quantize(Decimal('1.000'))),
+                    "xmax": float(Decimal(float(xmax/img_w)).quantize(Decimal('1.000'))),
+                    "ymax": float(Decimal(float(ymax/img_h)).quantize(Decimal('1.000'))),
+                })
+
             return faceNum, face_positions, landmarks
 
     def get_face_complexion(self, img, face_num, landmarks):
@@ -209,7 +217,7 @@ class ImageFilter(object):
                 not-black: 非黑人
         """
         complexion_label_dict = {"0": "not_black", "1": "black"}
-        if not img is None and face_num > 0:
+        if img is not None and face_num > 0:
             imgs, face_complexion_labels = [], []
             for face_index in range(face_num):
                 landmark_alignment = []
@@ -243,7 +251,6 @@ class ImageFilter(object):
                 # 改动
                 return face_positions, self.get_face_complexion(img, faceNum, landmarks)
 
-
     def get_clothes_category_positions(self, img):
         """
         进行服装检测
@@ -254,7 +261,7 @@ class ImageFilter(object):
             return self.clothes_detecter.detect_image(img)
         else:
             return None
-          
+
     def get_img_text(self, img):
         """
         判断图像内是否存在大量文本
@@ -262,12 +269,8 @@ class ImageFilter(object):
             'text': 图像中存在大量文本
             'norm': 图像为正常图像
         """
-        text_label_dict = {"0": "text", "1": "norm"}
         if img is not None:
             if len(img.shape) == 2:
                 return 'is_grey'
             else:
-                # result_label = self.text_model.recognition(img)
-                # print(result_label)
-                # result_index = text_label_dict[result_label]
                 return self.text_model.recognition(img)

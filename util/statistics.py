@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from flask import request
 
 from util.common_util import CommonUtil
-from util.common_service import redis_client, host_name, get_running_port
+from service.redis_service import redis_client, host_name, get_running_port
 
 logger = logger.getLogger(__name__)
 

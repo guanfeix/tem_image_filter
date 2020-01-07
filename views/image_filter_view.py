@@ -1,17 +1,18 @@
 import sys
-import json
 import socket
-import logging
 import traceback
+
+from typing import Dict, List, Any
 
 from flask import request
 from flask import make_response, jsonify
 
-from .detect_view import DetectView
 from dynaconf import settings
+
+from views.detect_view import DetectView
 from detect.quality_detect import QualityDetect
 from util.statistics import statistics_recognize
-from util.common_service import pick_request_url
+from service.common_service import pick_request_url
 
 from service.logging_service import logger
 hostname = socket.gethostname()
@@ -29,23 +30,20 @@ class ImageFilterView(DetectView):
             'filter_result': False,
             'filter_model_version': self.version.get_filter_model_version(),
         }
-
-        filter_tag_list = dict()
+        base_tag_list: List[str] = []
+        face_info_list: List[Dict] = []
+        filter_tag_list: Dict[str, Any] = dict()
         result['filter_tags'] = filter_tag_list
-        base_tag_list = []
         filter_tag_list['base_tags'] = base_tag_list
-
+        filter_tag_list['face_infos'] = face_info_list
         try:
-            data = request.get_data()
-            json_data = json.loads(data)
+            json_data = request.get_json()
             logger.info('request params: {}'.format(json_data))
-
             url = json_data['imageUrl']
-            result['url'] = url
-            image_url = pick_request_url(json_data)
             image_source = json_data['image_source']
+            result['url'] = url
             # 图片载入
-            detect = QualityDetect(self.image_filter, image_url, image_source)
+            detect = QualityDetect(self.image_filter, pick_request_url(url), image_source)
             detect.load_image_cv()
             # 基本信息
             base_tags, resolution_tag = detect.tag_base_info()
@@ -59,27 +57,15 @@ class ImageFilterView(DetectView):
             logger.info('face info is_ok: {}, fail_tags: {}, face_normal_positions: {}'.
                         format(is_ok, fail_tag, face_normal_positions))
             # 记录面部信息
-            face_info_list = []
-            filter_tag_list['face_infos'] = face_info_list
             for index, pos in enumerate(face_normal_positions):
-                face_info_list.append({"face_index": index,  "postion": pos})
-            # 提供全量的图片信息不中途返回
-
-            # if not is_ok:
-            #     base_tag_list.append(fail_tag)
-            #     logger.info('result: {}'.format(result))
-            #     return make_response(jsonify(result), 200)
-
+                face_info_list.append({"face_index": index, "position": pos})
 
             # 黑人图片去除
             if face_num > 0:
                 black_face, face_complexion_list = detect.get_face_complexion()
                 # 记录每张脸的肤色信息
-                try:
-                    for i, face in enumerate(face_info_list):
-                        face['complexion'] = face_complexion_list[i]
-                except Exception as e:
-                    logger.exception('Complexion store error')
+                for i, face in enumerate(face_info_list):
+                    face['complexion'] = face_complexion_list[i]
                 if black_face:
                     base_tag_list.append('filter-face-black')
             # 衣物过滤
@@ -92,11 +78,10 @@ class ImageFilterView(DetectView):
             is_dup = False
             if duplicate:
                 hash_result, dups = detect.filter_dedup_image(url)
-                # feature_hash: int = hash_result[1]
                 is_dup = True if dups else False
                 result['duplicated'] = is_dup
                 result['duplicated_features'] = dups
-                result['feature_hash'] = hash_result[1]
+                result['feature_hash']: int = hash_result[1]
 
             clothes_only_ok = is_ok and not text_exist and not is_dup
             if not is_ok:

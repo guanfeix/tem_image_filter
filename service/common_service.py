@@ -12,11 +12,11 @@ import traceback
 import sys
 import subprocess
 
-from typing import List, Generator, Iterator
+from dynaconf import settings
 from datetime import datetime, timedelta
-from playhouse.shortcuts import model_to_dict, dict_to_model
+from typing import List, Generator, Iterator
 
-logger = logging.getLogger(__name__)
+from service.logging_service import logger
 
 
 class CommonUtil(object):
@@ -104,10 +104,9 @@ class CommonUtil(object):
     def get_exception_info(lines=-2):
         return ''.join(traceback.format_exception(*sys.exc_info())[lines:])
 
-    @staticmethod
-    def peewee_model_to_dict(obj):
-        return model_to_dict(obj)
 
-    @staticmethod
-    def dict_to_peewee_model(model, dict_json):
-        return dict_to_model(model, dict_json)
+def pick_request_url(url):
+    if settings.OSSURL_INTERNAL and 'oss-cn-hangzhou-internal' not in url:
+        url = url.replace('oss-cn-hangzhou', 'oss-cn-hangzhou-internal')
+        logger.info('url: %s', url)
+    return url

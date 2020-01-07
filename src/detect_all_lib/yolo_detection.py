@@ -7,6 +7,7 @@ from keras.layers import Input
 import numpy as np
 from PIL import Image
 from .model import yolo_body, yolo_test
+from decimal import Decimal
 
 
 def resize_iamge(image, size):
@@ -29,7 +30,7 @@ def filter_invalid_box(box, label):
 		2.对于下装:
 			ymax>0.9 and ymin>0.6
 
-		面积过大的直接删除
+			面积过大的直接删除
 	"""
 	xmin, ymin, xmax, ymax = box
 	w_h = (xmax - xmin) * (ymax - ymin)
@@ -94,9 +95,9 @@ class YOLO(object):
 		self.yolo_model = yolo_body(Input(shape=(None, None, 3)), num_anchors // 3, num_classes)
 		self.yolo_model.load_weights(self.model_path)
 		print('{} model, anchors, and classes loaded.'.format(model_path))
-		boxes, scores, classes = yolo_test(self.yolo_model.output, self.anchors,
-		                                   num_classes, self.input_image_shape, score_threshold=self.score,
-		                                   iou_threshold=self.iou)
+		boxes, scores, classes = yolo_test(
+			self.yolo_model.output, self.anchors,
+			num_classes, self.input_image_shape, score_threshold=self.score, iou_threshold=self.iou)
 		return boxes, scores, classes
 
 	def __init__(self, model_path='model_path/detect_model_v7.h5'):
@@ -105,9 +106,9 @@ class YOLO(object):
 		self.score = 0.4
 		self.iou = 0.45
 
-		#衣念V1 版本
+		# 衣念V1 版本
 		self.class_names = ['上衣', '裤装', '裙装', '包', '鞋靴', '帽子']
-		self.anchors = [33,37, 49,58, 91,49, 112,108, 137,178, 178,282, 257,174, 262,328, 361,370]
+		self.anchors = [33, 37, 49, 58, 91, 49, 112, 108, 137, 178, 178, 282, 257, 174, 262, 328, 361, 370]
 
 		self.anchors = np.array(self.anchors).reshape(-1, 2)
 		self.sess = K.get_session()
@@ -139,7 +140,14 @@ class YOLO(object):
 			predicted_class, box, score = self.class_names[c], out_boxes[i], out_scores[i]
 			if predicted_class in self.class_names[5:]:
 				xmin, ymin, xmax, ymax = transBox(box, img_w, img_h)
-				labelList.append({"xmin": str(xmin), "ymin": str(ymin), "xmax": str(xmax), "ymax": str(ymax),"label": str(predicted_class), "score": str(score)})
+				labelList.append({
+					"label": str(predicted_class),
+					"xmin": str(Decimal(float(xmin)).quantize(Decimal('1.000'))),
+					"ymin": str(Decimal(float(ymin)).quantize(Decimal('1.000'))),
+					"xmax": str(Decimal(float(xmax)).quantize(Decimal('1.000'))),
+					"ymax": str(Decimal(float(ymax)).quantize(Decimal('1.000'))),
+					"score": str(Decimal(float(score)).quantize(Decimal('1.000'))),
+				})
 			else:
 				other_classes.append(c)
 				other_scores.append(out_scores[i])
@@ -160,7 +168,17 @@ class YOLO(object):
 				if addRuleFlag and filter_invalid_box([xmin, ymin, xmax, ymax], predicted_class) == False:
 					continue
 
-				labelList.append({"xmin": str(xmin), "ymin": str(ymin), "xmax": str(xmax), "ymax": str(ymax),"label": str(predicted_class), "score": str(score)})
+				# labelList.append({
+				# 	"xmin": str(xmin), "ymin": str(ymin), "xmax": str(xmax), "ymax": str(ymax),
+				# 	"label": str(predicted_class), "score": str(round(score, 3))})
+				labelList.append({
+					"label": str(predicted_class),
+					"xmin": str(Decimal(float(xmin)).quantize(Decimal('1.000'))),
+					"ymin": str(Decimal(float(ymin)).quantize(Decimal('1.000'))),
+					"xmax": str(Decimal(float(xmax)).quantize(Decimal('1.000'))),
+					"ymax": str(Decimal(float(ymax)).quantize(Decimal('1.000'))),
+					"score": str(Decimal(float(score)).quantize(Decimal('1.000'))),
+				})
 		print("laeblList : {}".format(labelList))
 		return labelList
 

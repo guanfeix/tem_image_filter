@@ -10,7 +10,7 @@ from flask import make_response, jsonify, render_template
 
 from typing import Any, Dict, List
 from dynaconf import settings
-from util.common_service import redis_client
+from service.redis_service import redis_client
 
 
 class StatisticsView(MethodView):

@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 logger.info('REDIS_URL: %s', REDIS_URL)
 
 
-
 def __get_server_ip():
     """
     获取当前服务器ip地址,mac 不可用
