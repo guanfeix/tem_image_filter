@@ -36,5 +36,5 @@ MODELS_PATH = {
 }
 
 # 是否内网
-# OSSURL_INTERNAL = os.getenv('OSSURL_INTERNAL', True)
-OSSURL_INTERNAL = os.getenv('OSSURL_INTERNAL', False)
+OSSURL_INTERNAL = os.getenv('OSSURL_INTERNAL', True)
+# OSSURL_INTERNAL = os.getenv('OSSURL_INTERNAL', False)
