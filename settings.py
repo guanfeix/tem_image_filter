@@ -23,7 +23,7 @@ REDIS_CONFIG = {
 DEDUP_TEM_INCRE_REDIS_CONFIG = copy.deepcopy(REDIS_CONFIG)
 DEDUP_TEM_INCRE_REDIS_CONFIG['db'] = 3
 FEATURE_INSERT = os.getenv('FEATURE_INSERT', '1')
-DEDUPLICATE = True
+DEDUPLICATE = False
 
 # 模型路径
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -36,5 +36,5 @@ MODELS_PATH = {
 }
 
 # 是否内网
-OSSURL_INTERNAL = os.getenv('OSSURL_INTERNAL', True)
-# OSSURL_INTERNAL = os.getenv('OSSURL_INTERNAL', False)
+# OSSURL_INTERNAL = os.getenv('OSSURL_INTERNAL', True)
+OSSURL_INTERNAL = os.getenv('OSSURL_INTERNAL', False)
