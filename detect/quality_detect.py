@@ -64,9 +64,9 @@ class QualityDetect(DetectBase):
 	def judge_image_shape(self):
 		img_h, img_w, _ = self.image_cv.shape
 		if self.image_source == 'ins':
-			return min(img_h, img_w) > 720
+			return min(img_h, img_w) >= 720
 		elif self.image_source == 'weibo':
-			return min(img_h, img_w) > 640 and max(img_h, img_w) < 1800
+			return min(img_h, img_w) >= 640 and max(img_h, img_w) <= 1800
 
 	def tag_base_info(self):
 
