@@ -139,7 +139,7 @@ class QualityDetect(DetectBase):
 		elif new_face_num > max_face_num:
 			# 过滤后人脸数大于max_face_num
 			face_filter_fail = True
-			msg = msg+'face_num>%s'.format(max_face_num)
+			msg = msg+'face_num>{}'.format(max_face_num)
 
 		if face_filter_fail:
 			return False, msg, new_face_normal_positions, new_face_num

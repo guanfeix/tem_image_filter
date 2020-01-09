@@ -52,10 +52,10 @@ class ImageFilterView(DetectView):
             [base_tag_list.append(tag) for tag in base_tags]
             filter_tag_list['blur-resolution'] = resolution_tag
             # 人脸过滤
-            is_ok, fail_tag, face_normal_positions, face_num = detect.tag_faces_info()
+            is_face_ok, fail_tag, face_normal_positions, face_num = detect.tag_faces_info()
 
             logger.info('face info is_ok: {}, fail_tags: {}, face_normal_positions: {}'.
-                        format(is_ok, fail_tag, face_normal_positions))
+                        format(is_face_ok, fail_tag, face_normal_positions))
             # 记录面部信息
             for index, pos in enumerate(face_normal_positions):
                 face_info_list.append({"face_index": index, "position": pos})
@@ -84,6 +84,8 @@ class ImageFilterView(DetectView):
                 result['feature_hash']: int = hash_result[1]
 
             clothes_only_ok = is_ok and not text_exist and not is_dup
+            if not is_face_ok:
+                base_tag_list.append(fail_tag)
             if not is_ok:
                 base_tag_list.append(msg)
             if text_exist:
