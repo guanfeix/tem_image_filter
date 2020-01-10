@@ -83,7 +83,7 @@ class ImageFilterView(DetectView):
                 result['duplicated_features'] = dups
                 result['feature_hash']: int = hash_result[1]
 
-            clothes_only_ok = is_ok and not text_exist and not is_dup
+            clothes_only_ok = is_ok and not text_exist
             if not is_face_ok:
                 base_tag_list.append(fail_tag)
             if not is_ok:
@@ -91,7 +91,7 @@ class ImageFilterView(DetectView):
             if text_exist:
                 base_tag_list.append('text_exist')
 
-            quality_fail = base_tag_list or is_dup
+            quality_fail = base_tag_list
 
             if not quality_fail:
                 base_tag_list.append('filter-quality-ok')
