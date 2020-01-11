@@ -51,7 +51,7 @@ class DetectBase(object):
                     self.image_url, self.image_cv.shape, time.time()-time_start))
             except Exception as e:
                 err = 'load image [{}] for cv fail: {}'.format(self.image_url, e)
-                logger.error(err)
+                logger.exception(err)
                 return None, err
         return self.image_cv, None
 

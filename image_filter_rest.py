@@ -1,8 +1,10 @@
 from flask import Flask
+from dynaconf import settings
 
-from src.filter_lib.image_filter import ImageFilterConstructor
-from views.image_filter_view import ImageFilterView
 from util.statistics import start_daemon_thread
+from views.image_filter_view import ImageFilterView
+from src.filter_lib.image_filter import ImageFilterConstructor
+
 
 from service.logging_service import logger
 
@@ -31,5 +33,7 @@ def daemon_thread():
 
 if __name__ == "__main__":
     logger.info('image filter detect service start ...')
-
+    import os
+    print(os.environ.get('DYNACONF_SETTINGS'), os.environ.get('REDIS_URL'))
+    print('OSSURL_INTERNAL:', settings.OSSURL_INTERNAL, 'DEDUP_TEM_INCRE_REDIS_CONFIG:', settings.DEDUP_TEM_INCRE_REDIS_CONFIG)
     app.run(host="0.0.0.0", port=9003, threaded=True)

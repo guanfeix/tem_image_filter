@@ -4,7 +4,7 @@ import os
 from keras.layers import *
 import numpy as np
 from keras.models import Model
-from recognition_lib.efficient_net import EfficientNetB3
+from src.recognition_lib.efficient_net import EfficientNetB3
 from PIL import Image
 import tensorflow as tf
 import keras.backend as K
