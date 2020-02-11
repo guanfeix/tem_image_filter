@@ -11,6 +11,10 @@ image/filter:
 ## 旧版过滤器
 curl -w %{time_total} -X POST  -H "Content-Type:application/json"  http://gpu003:8765/image/filter -d \
 '{"imageUrl": "https://zhiyi-image.oss-cn-hangzhou.aliyuncs.com/data_infra/18/025815723e4036adbc1db3d297e5d082_1d3e7f7c929bf96e9b8b70572eacc82f.jpg","sizeFilterThres":"0.005","image_source":"ins"}'
+## 新版过滤器
+curl -w %{time_total} -X POST  -H "Content-Type:application/json"  http://gpu005:8360/image/filter -d \
+'{"imageUrl": "https://zhiyi-image.oss-cn-hangzhou.aliyuncs.com/data_infra/18/025815723e4036adbc1db3d297e5d082_1d3e7f7c929bf96e9b8b70572eacc82f.jpg","sizeFilterThres":"0.005","image_source":"ins"}'
+
 
 
 curl -w %{time_total} -X POST  -H "Content-Type:application/json"  http://0.0.0.0:9003/image/filter -d \
