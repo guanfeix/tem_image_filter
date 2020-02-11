@@ -28,6 +28,7 @@ class ImageFilterView(DetectView):
         result = {
             'server_name': hostname,
             'filter_result': False,
+            'duplicate_or_not': duplicate,
             'filter_model_version': self.version.get_filter_model_version(),
         }
         base_tag_list: List[str] = []

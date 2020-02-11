@@ -17,7 +17,7 @@ curl -w %{time_total} -X POST  -H "Content-Type:application/json"  http://gpu005
 
 
 
-curl -w %{time_total} -X POST  -H "Content-Type:application/json"  http://0.0.0.0:9003/image/filter -d \
+curl -w %{time_total} -X POST  -H "Content-Type:application/json"  http://gpu004:9009/image/filter -d \
 '{"imageUrl": "https://zhiyi-image.oss-cn-hangzhou.aliyuncs.com/data_infra/18/a72ae84fe1b263727e3c86cb99bd9a0b_120c18d9b9bfbee777cf5e89ea16db32.jpg","sizeFilterThres":"0.005","image_source":"ins"}'
 
 
