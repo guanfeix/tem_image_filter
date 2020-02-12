@@ -8,6 +8,8 @@ from src.filter_lib.image_filter import ImageFilterConstructor
 
 
 from service.logging_service import logger
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 app = Flask(__name__)
 
@@ -24,6 +26,7 @@ ImageFilterView.init_version()
 ImageFilterView.init_filter(image_filter)
 
 app.add_url_rule('/image/filter', view_func=ImageFilterView.as_view('image_filter'))
+
 
 
 @app.route('/', endpoint='index')
