@@ -2,7 +2,10 @@
 ##### 本地测试-cpu:tensorflow==1.4.0
 
 ##### 服务器测试-gpu:tensorflow-gpu==1.4.0
-
+# 部署配置文件：conf目录
+    新版增量过滤器：tem_image_filter.conf
+    无去重过滤器：test_tem_image_filter.conf
+    
 ## 测试
 image/detect:
 curl -w %{time_total} -X POST  -H "Content-Type:application/json"  http://gpu003:8766/image/detect/category -d 
